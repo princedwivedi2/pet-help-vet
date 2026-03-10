@@ -7,6 +7,8 @@ const NAV_ITEMS = [
   { path: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
   { path: '/appointments', label: 'Appointments', icon: 'appointments' },
   { path: '/sos', label: 'SOS Requests', icon: 'sos' },
+  { path: '/wallet', label: 'Wallet', icon: 'wallet' },
+  { path: '/reviews', label: 'Reviews', icon: 'star' },
   { path: '/profile', label: 'My Profile', icon: 'profile' },
   { path: '/notifications', label: 'Notifications', icon: 'notification' },
 ];

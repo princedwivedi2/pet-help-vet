@@ -4,6 +4,8 @@ import Login from './pages/Login/Login';
 import Dashboard from './pages/Dashboard/Dashboard';
 import Appointments from './pages/Appointments/Appointments';
 import SosRequests from './pages/SOS/SosRequests';
+import Wallet from './pages/Wallet/Wallet';
+import Reviews from './pages/Reviews/Reviews';
 import Profile from './pages/Profile/Profile';
 import Notifications from './pages/Notifications/Notifications';
 import { useAuth } from './hooks/useAuth';
@@ -30,6 +32,8 @@ export default function App() {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="appointments" element={<Appointments />} />
         <Route path="sos" element={<SosRequests />} />
+        <Route path="wallet" element={<Wallet />} />
+        <Route path="reviews" element={<Reviews />} />
         <Route path="profile" element={<Profile />} />
         <Route path="notifications" element={<Notifications />} />
       </Route>

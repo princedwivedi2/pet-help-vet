@@ -12,6 +12,10 @@ const appointmentService = {
   updateStatus(uuid, data) {
     return api.put(`/appointments/${uuid}/status`, data);
   },
+
+  endVisit(uuid, data) {
+    return api.put(`/appointments/${uuid}/end-visit`, data);
+  },
 };
 
 export default appointmentService;

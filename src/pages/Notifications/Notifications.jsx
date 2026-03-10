@@ -10,16 +10,19 @@ import styles from './Notifications.module.css';
 export default function Notifications() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [markingAll, setMarkingAll] = useState(false);
 
   const loadNotifications = useCallback(async () => {
     try {
       setLoading(true);
+      setError('');
       const res = await notificationService.getAll();
       const list = res?.data?.data || res?.data || [];
       setNotifications(Array.isArray(list) ? list : []);
-    } catch {
+    } catch (err) {
       setNotifications([]);
+      setError(err?.response?.data?.message || 'Failed to load notifications');
     } finally {
       setLoading(false);
     }
@@ -35,8 +38,8 @@ export default function Notifications() {
       setNotifications((prev) =>
         prev.map((n) => (n.id === id ? { ...n, read_at: new Date().toISOString() } : n))
       );
-    } catch {
-      // handled
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to mark as read');
     }
   };
 
@@ -47,8 +50,8 @@ export default function Notifications() {
       setNotifications((prev) =>
         prev.map((n) => ({ ...n, read_at: n.read_at || new Date().toISOString() }))
       );
-    } catch {
-      // handled
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to mark all as read');
     } finally {
       setMarkingAll(false);
     }
@@ -60,6 +63,7 @@ export default function Notifications() {
 
   return (
     <div className={styles.page}>
+      {error && <div className={styles.error || 'error'}>{error}</div>}
       <div className={styles.header}>
         <span className={styles.count}>
           {unreadCount > 0 ? `${unreadCount} unread` : 'All caught up'}

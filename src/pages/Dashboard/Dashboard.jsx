@@ -12,6 +12,7 @@ import styles from './Dashboard.module.css';
 
 export default function Dashboard() {
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [stats, setStats] = useState({
     totalAppointments: 0,
     pendingAppointments: 0,
@@ -35,26 +36,25 @@ export default function Dashboard() {
       ]);
 
       if (apptRes.status === 'fulfilled') {
-        const rawAppointments = apptRes.value?.data?.data || apptRes.value?.data;
-        const appointments = Array.isArray(rawAppointments) ? rawAppointments : (Array.isArray(rawAppointments?.data) ? rawAppointments.data : []);
+        const appointments = apptRes.value?.data?.appointments || [];
         const today = new Date().toISOString().split('T')[0];
 
         setStats((prev) => ({
           ...prev,
           totalAppointments: appointments.length,
           pendingAppointments: appointments.filter((a) => a.status === 'pending').length,
-          todayAppointments: appointments.filter((a) => a.appointment_date === today).length,
+          todayAppointments: appointments.filter((a) => a.scheduled_at && a.scheduled_at.startsWith(today)).length,
         }));
 
         const upcomingAppts = appointments
           .filter((a) => a.status === 'pending' || a.status === 'confirmed')
-          .sort((a, b) => new Date(a.appointment_date) - new Date(b.appointment_date))
+          .sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at))
           .slice(0, 5);
         setUpcoming(upcomingAppts);
       }
 
       if (sosRes.status === 'fulfilled') {
-        const sosList = sosRes.value?.data || [];
+        const sosList = sosRes.value?.data?.sos_requests || [];
         setStats((prev) => ({
           ...prev,
           activeSos: Array.isArray(sosList) ? sosList.length : 0,
@@ -62,10 +62,10 @@ export default function Dashboard() {
       }
 
       if (profileRes.status === 'fulfilled') {
-        setVetProfile(profileRes.value?.data);
+        setVetProfile(profileRes.value?.data?.vet_profile || profileRes.value?.data);
       }
-    } catch {
-      // handled by individual catches
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to load dashboard data');
     } finally {
       setLoading(false);
     }
@@ -75,6 +75,7 @@ export default function Dashboard() {
 
   return (
     <div className={styles.dashboard}>
+      {error && <div className={styles.error || 'error'}>{error}</div>}
       {vetProfile && vetProfile.vet_status !== 'approved' && (
         <div className={styles.alert}>
           <Icon name="document" />
@@ -132,7 +133,7 @@ export default function Dashboard() {
                   </span>
                   <span className={styles.listMeta}>
                     {appt.pet?.name && `${appt.pet.name} • `}
-                    {formatDate(appt.appointment_date)} at {formatTime(appt.appointment_time)}
+                    {formatDate(appt.scheduled_at)} at {formatTime(appt.scheduled_at ? new Date(appt.scheduled_at).toTimeString().slice(0, 5) : '')}
                   </span>
                 </div>
                 <Badge variant={APPOINTMENT_STATUS[appt.status]?.variant || 'default'}>

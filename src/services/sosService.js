@@ -8,6 +8,10 @@ const sosService = {
   updateStatus(uuid, data) {
     return api.put(`/sos/${uuid}/status`, data);
   },
+
+  updateLocation(uuid, data) {
+    return api.put(`/sos/${uuid}/location`, data);
+  },
 };
 
 export default sosService;

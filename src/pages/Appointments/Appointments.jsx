@@ -23,6 +23,7 @@ const STATUS_TABS = [
 export default function Appointments() {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [tab, setTab] = useState('all');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -33,16 +34,18 @@ export default function Appointments() {
   const loadAppointments = useCallback(async () => {
     try {
       setLoading(true);
+      setError('');
       const params = { page, per_page: 15 };
       if (tab !== 'all') params.status = tab;
       if (search) params.search = search;
 
       const res = await appointmentService.getAll(params);
-      const list = res?.data?.data || res?.data || [];
+      const list = res?.data?.appointments || [];
       setAppointments(Array.isArray(list) ? list : []);
-      setTotalPages(res?.data?.last_page || res?.meta?.last_page || 1);
-    } catch {
+      setTotalPages(res?.data?.pagination?.last_page || res?.data?.last_page || 1);
+    } catch (err) {
       setAppointments([]);
+      setError(err?.response?.data?.message || 'Failed to load appointments');
     } finally {
       setLoading(false);
     }
@@ -55,11 +58,13 @@ export default function Appointments() {
   const handleStatusUpdate = async (uuid, status) => {
     try {
       setActionLoading(true);
-      await appointmentService.updateStatus(uuid, { status });
+      const payload = { status };
+      if (status === 'cancelled') payload.reason = 'Cancelled by vet';
+      await appointmentService.updateStatus(uuid, payload);
       setSelected(null);
       loadAppointments();
-    } catch {
-      // error handled by interceptor
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to update appointment status');
     } finally {
       setActionLoading(false);
     }
@@ -86,8 +91,8 @@ export default function Appointments() {
       label: 'Date & Time',
       render: (row) => (
         <div>
-          <div>{formatDate(row.appointment_date)}</div>
-          <div className={styles.meta}>{formatTime(row.appointment_time)}</div>
+          <div>{formatDate(row.scheduled_at)}</div>
+          <div className={styles.meta}>{row.scheduled_at ? new Date(row.scheduled_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '—'}</div>
         </div>
       ),
     },
@@ -120,6 +125,7 @@ export default function Appointments() {
 
   return (
     <div className={styles.page}>
+      {error && <div className={styles.error || 'error'}>{error}</div>}
       <div className={styles.toolbar}>
         <SearchBar value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search appointments..." />
       </div>
@@ -161,11 +167,11 @@ export default function Appointments() {
             </div>
             <div className={styles.detailRow}>
               <span className={styles.detailLabel}>Date</span>
-              <span>{formatDate(selected.appointment_date)}</span>
+              <span>{formatDate(selected.scheduled_at)}</span>
             </div>
             <div className={styles.detailRow}>
               <span className={styles.detailLabel}>Time</span>
-              <span>{formatTime(selected.appointment_time)}</span>
+              <span>{selected.scheduled_at ? new Date(selected.scheduled_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '—'}</span>
             </div>
             <div className={styles.detailRow}>
               <span className={styles.detailLabel}>Reason</span>

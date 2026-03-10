@@ -42,6 +42,16 @@
   min-width: 140px;
 }
 
+.statusSelect {
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  font-size: var(--font-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
 .success {
   padding: 10px 16px;
   background: var(--color-success-light);
@@ -65,4 +75,100 @@
   font-size: var(--font-sm);
   text-align: center;
   padding: 24px;
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.docSection {
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.docTitle {
+  margin: 0;
+  font-size: var(--font-sm);
+  font-weight: 600;
+}
+
+.docRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.docMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--font-sm);
+}
+
+.docMeta span {
+  color: var(--color-text-muted);
+}
+
+.docActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.completionCard {
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.completionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--font-sm);
+}
+
+.progressBar {
+  width: 100%;
+  height: 8px;
+  background: var(--color-border-light);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--color-primary);
+}
+
+.progressText {
+  font-size: var(--font-sm);
+  color: var(--color-text-muted);
+}
+
+.missingList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--font-sm);
+}
+
+.missingLink {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.missingLink:hover {
+  text-decoration: underline;
 }

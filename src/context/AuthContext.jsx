@@ -75,6 +75,15 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  // Listen for forced logout from API interceptor (401)
+  useEffect(() => {
+    const handleForceLogout = () => {
+      setUser(null);
+    };
+    window.addEventListener('auth:logout', handleForceLogout);
+    return () => window.removeEventListener('auth:logout', handleForceLogout);
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{ user, isAuthenticated, login, logout, loading, refreshUser }}

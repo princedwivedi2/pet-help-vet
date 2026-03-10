@@ -20,6 +20,10 @@ const authService = {
   changePassword(data) {
     return api.put('/auth/change-password', data);
   },
+
+  deleteAccount(data) {
+    return api.delete('/auth/account', { data });
+  },
 };
 
 export default authService;

@@ -13,17 +13,20 @@ import styles from './SosRequests.module.css';
 export default function SosRequests() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [selected, setSelected] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
 
   const loadRequests = useCallback(async () => {
     try {
       setLoading(true);
+      setError('');
       const res = await sosService.getActive();
-      const list = res?.data || [];
+      const list = res?.data?.sos_requests || res?.data || [];
       setRequests(Array.isArray(list) ? list : []);
-    } catch {
+    } catch (err) {
       setRequests([]);
+      setError(err?.response?.data?.message || 'Failed to load SOS requests');
     } finally {
       setLoading(false);
     }
@@ -39,8 +42,8 @@ export default function SosRequests() {
       await sosService.updateStatus(uuid, { status });
       setSelected(null);
       loadRequests();
-    } catch {
-      // handled
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to update SOS status');
     } finally {
       setActionLoading(false);
     }
@@ -54,6 +57,8 @@ export default function SosRequests() {
         <h2 className={styles.heading}>Active SOS Requests</h2>
         <Button variant="secondary" onClick={loadRequests}>Refresh</Button>
       </div>
+
+      {error && <div className={styles.error || 'error'}>{error}</div>}
 
       {requests.length === 0 ? (
         <Card>
@@ -93,9 +98,9 @@ export default function SosRequests() {
                       <strong>Pet:</strong> {req.pet.name} ({req.pet.species || ''})
                     </span>
                   )}
-                  {req.location && (
+                  {req.address && (
                     <span className={styles.metaItem}>
-                      <strong>Location:</strong> {req.location}
+                      <strong>Location:</strong> {req.address}
                     </span>
                   )}
                 </div>
@@ -105,20 +110,29 @@ export default function SosRequests() {
                 <Button size="sm" variant="ghost" onClick={() => setSelected(req)}>
                   Details
                 </Button>
-                {req.status === 'active' && (
+                {req.status === 'pending' && (
                   <Button
                     size="sm"
                     variant="warning"
-                    onClick={() => handleStatusUpdate(req.uuid, 'responding')}
+                    onClick={() => handleStatusUpdate(req.uuid, 'acknowledged')}
                   >
                     Respond
                   </Button>
                 )}
-                {req.status === 'responding' && (
+                {req.status === 'acknowledged' && (
+                  <Button
+                    size="sm"
+                    variant="info"
+                    onClick={() => handleStatusUpdate(req.uuid, 'in_progress')}
+                  >
+                    Start Treatment
+                  </Button>
+                )}
+                {req.status === 'in_progress' && (
                   <Button
                     size="sm"
                     variant="success"
-                    onClick={() => handleStatusUpdate(req.uuid, 'resolved')}
+                    onClick={() => handleStatusUpdate(req.uuid, 'completed')}
                   >
                     Resolve
                   </Button>
@@ -165,7 +179,7 @@ export default function SosRequests() {
             </div>
             <div className={styles.detailRow}>
               <span className={styles.detailLabel}>Location</span>
-              <span>{selected.location || '—'}</span>
+              <span>{selected.address || '—'}</span>
             </div>
             <div className={styles.detailRow}>
               <span className={styles.detailLabel}>Created</span>
@@ -174,20 +188,29 @@ export default function SosRequests() {
           </div>
 
           <div className={styles.modalActions}>
-            {selected.status === 'active' && (
+            {selected.status === 'pending' && (
               <Button
                 variant="warning"
                 loading={actionLoading}
-                onClick={() => handleStatusUpdate(selected.uuid, 'responding')}
+                onClick={() => handleStatusUpdate(selected.uuid, 'acknowledged')}
               >
                 Respond to Emergency
               </Button>
             )}
-            {selected.status === 'responding' && (
+            {selected.status === 'acknowledged' && (
+              <Button
+                variant="info"
+                loading={actionLoading}
+                onClick={() => handleStatusUpdate(selected.uuid, 'in_progress')}
+              >
+                Start Treatment
+              </Button>
+            )}
+            {selected.status === 'in_progress' && (
               <Button
                 variant="success"
                 loading={actionLoading}
-                onClick={() => handleStatusUpdate(selected.uuid, 'resolved')}
+                onClick={() => handleStatusUpdate(selected.uuid, 'completed')}
               >
                 Mark as Resolved
               </Button>
