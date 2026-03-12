@@ -1,8 +1,13 @@
 .card {
   background: var(--color-surface);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-xs);
+  box-shadow: var(--shadow-card);
   border: 1px solid var(--color-border-light);
+  transition: box-shadow var(--transition-base);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-card-hover);
 }
 
 .noPad .body {
@@ -10,34 +15,58 @@
 }
 
 .header {
-  padding: 18px 22px;
+  padding: 18px 24px;
   border-bottom: 1px solid var(--color-border-light);
 }
 
 .heading {
   font-size: var(--font-md);
-  font-weight: 600;
+  font-weight: 700;
   color: var(--color-text);
 }
 
 .body {
-  padding: 22px;
+  padding: 24px;
 }
 
 .stat {
   background: var(--color-surface);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-xs);
+  box-shadow: var(--shadow-card);
   border: 1px solid var(--color-border-light);
-  padding: 20px 22px;
+  padding: 22px 24px;
   display: flex;
   align-items: flex-start;
-  gap: 14px;
+  gap: 16px;
+  transition: all var(--transition-base);
+  position: relative;
+  overflow: hidden;
+}
+
+.stat::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--gradient-primary);
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+
+.stat:hover {
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-2px);
+}
+
+.stat:hover::before {
+  opacity: 1;
 }
 
 .statIcon {
-  width: 42px;
-  height: 42px;
+  width: 46px;
+  height: 46px;
   border-radius: var(--radius-md);
   background: var(--color-primary-light);
   color: var(--color-primary);
@@ -50,18 +79,22 @@
 .statBody {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
 }
 
 .statTitle {
-  font-size: var(--font-sm);
-  color: var(--color-text-secondary);
+  font-size: var(--font-xs);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .statValue {
-  font-size: var(--font-xl);
-  font-weight: 700;
+  font-size: var(--font-2xl);
+  font-weight: 800;
   color: var(--color-text);
+  letter-spacing: -0.02em;
 }
 
 .statSub {

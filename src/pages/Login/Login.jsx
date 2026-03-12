@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
 import styles from './Login.module.css';
 
@@ -39,14 +40,19 @@ export default function Login() {
 
   return (
     <div className={styles.wrapper}>
-      <div className={styles.card}>
+      <motion.div
+        className={styles.card}
+        initial={{ opacity: 0, y: 24, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
+      >
         <div className={styles.header}>
           <div className={styles.logo}>
             <span className={styles.logoMark}>P</span>
-            <span className={styles.logoText}>P V</span>
+            <span className={styles.logoText}>PetSathi</span>
           </div>
-          <h1 className={styles.title}>Vet Login</h1>
-          <p className={styles.subtitle}>Sign in to your veterinarian dashboard</p>
+          <h1 className={styles.title}>Welcome Back, Doctor</h1>
+          <p className={styles.subtitle}>Sign in to manage your veterinary practice</p>
         </div>
 
         <form onSubmit={handleSubmit} className={styles.form}>
@@ -83,7 +89,7 @@ export default function Login() {
             {loading ? <span className={styles.spinner} /> : 'Sign In'}
           </button>
         </form>
-      </div>
+      </motion.div>
     </div>
   );
 }

@@ -4,94 +4,165 @@
   gap: 24px;
 }
 
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.header h2 {
-  font-size: var(--font-xl);
-  font-weight: 600;
-  color: var(--color-text);
-}
-
 .balanceCard {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 28px 32px;
-  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark, #2563eb));
-  border-radius: var(--radius-lg);
+  padding: 32px 36px;
+  background: var(--gradient-dark);
+  border-radius: var(--radius-xl);
   color: #fff;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(4, 47, 46, 0.25);
+}
+
+.balanceCard::before {
+  content: '';
+  position: absolute;
+  top: -40%;
+  right: -15%;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(13, 148, 136, 0.25), transparent 70%);
+  pointer-events: none;
+}
+
+.balanceInfo {
+  position: relative;
+  z-index: 1;
 }
 
 .balanceInfo h3 {
   font-size: var(--font-sm);
-  font-weight: 400;
-  opacity: 0.85;
-  margin-bottom: 6px;
+  font-weight: 500;
+  opacity: 0.8;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .balanceAmount {
-  font-size: 32px;
-  font-weight: 700;
-  letter-spacing: -0.5px;
+  font-size: 38px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 .balanceMeta {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 4px;
+  gap: 5px;
   font-size: var(--font-sm);
-  opacity: 0.85;
+  opacity: 0.8;
+  position: relative;
+  z-index: 1;
 }
 
 .statsGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
-}
-
-.section {
-  display: flex;
-  flex-direction: column;
   gap: 14px;
 }
 
-.sectionTitle {
+.statCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+}
+
+.statIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  flex-shrink: 0;
+}
+
+.statInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.statValue {
   font-size: var(--font-lg);
-  font-weight: 600;
+  font-weight: 800;
   color: var(--color-text);
+}
+
+.statLabel {
+  font-size: var(--font-xs);
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.txSection {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .txList {
   display: flex;
   flex-direction: column;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-light);
+  box-shadow: var(--shadow-xs);
+  overflow: hidden;
 }
 
 .txItem {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 14px 0;
+  gap: 12px;
+  padding: 14px 18px;
   border-bottom: 1px solid var(--color-border-light);
+  transition: background var(--transition-fast);
+}
+
+.txDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dotCredit {
+  background: var(--color-success);
+}
+
+.dotDebit {
+  background: var(--color-danger);
 }
 
 .txItem:last-child {
   border-bottom: none;
 }
 
+.txItem:hover {
+  background: rgba(13, 148, 136, 0.03);
+}
+
 .txInfo {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
 }
 
 .txType {
   font-size: var(--font-sm);
-  font-weight: 500;
+  font-weight: 600;
   color: var(--color-text);
   text-transform: capitalize;
 }
@@ -99,10 +170,11 @@
 .txDate {
   font-size: var(--font-xs);
   color: var(--color-text-muted);
+  font-weight: 500;
 }
 
 .txAmount {
-  font-weight: 600;
+  font-weight: 700;
   font-size: var(--font-base);
 }
 
@@ -118,28 +190,36 @@
   color: var(--color-text-muted);
   font-size: var(--font-sm);
   text-align: center;
-  padding: 32px;
+  padding: 40px;
 }
 
 .error {
-  padding: 12px 16px;
-  background: var(--color-danger-light, #fef2f2);
-  border: 1px solid var(--color-danger, #ef4444);
+  padding: 14px 18px;
+  background: var(--color-danger-light);
+  border: 1px solid rgba(220, 38, 38, 0.1);
   border-radius: var(--radius-md);
   color: var(--color-danger);
   font-size: var(--font-sm);
+  font-weight: 500;
 }
 
 @media (max-width: 768px) {
   .statsGrid {
     grid-template-columns: 1fr;
   }
+
   .balanceCard {
     flex-direction: column;
     align-items: flex-start;
     gap: 16px;
+    padding: 24px;
   }
+
   .balanceMeta {
     align-items: flex-start;
+  }
+
+  .txItem {
+    padding: 12px 14px;
   }
 }

@@ -416,6 +416,31 @@ export default function Profile() {
 
   return (
     <div className={styles.page}>
+      {/* Persistent profile completion banner */}
+      {!profileStatus.is_complete && (
+        <div className={styles.topProgress}>
+          <div className={styles.topProgressHeader}>
+            <span className={styles.topProgressLabel}>Profile Completion</span>
+            <strong className={styles.topProgressPercent}>{completionPercent}%</strong>
+          </div>
+          <div className={styles.progressBar}>
+            <div className={styles.progressFill} style={{ width: `${completionPercent}%` }} />
+          </div>
+          {Array.isArray(profileStatus.missing_fields) && profileStatus.missing_fields.length > 0 && (
+            <div className={styles.topProgressMissing}>
+              {profileStatus.missing_fields.slice(0, 3).map((field) => (
+                <a key={field} href={MISSING_FIELD_LINKS[field] || '#'} className={styles.missingLink}>
+                  {MISSING_FIELD_LABELS[field] || field}
+                </a>
+              ))}
+              {profileStatus.missing_fields.length > 3 && (
+                <span className={styles.topProgressMore}>+{profileStatus.missing_fields.length - 3} more</span>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       <Tabs tabs={PROFILE_TABS} active={tab} onChange={(t) => { setTab(t); setError(''); setSuccess(''); if (t === 'availability') loadAvailabilities(); }} />
 
       {success && <div className={styles.success}>{success}</div>}

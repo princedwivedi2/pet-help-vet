@@ -1,21 +1,25 @@
 import { useEffect, useState, useCallback } from 'react';
 import Card from '../../components/common/Card/Card';
-import Table from '../../components/common/Table/Table';
 import Tabs from '../../components/common/Tabs/Tabs';
 import Badge from '../../components/common/Badge/Badge';
 import Button from '../../components/common/Button/Button';
 import Modal from '../../components/common/Modal/Modal';
 import SearchBar from '../../components/common/SearchBar/SearchBar';
 import Pagination from '../../components/common/Pagination/Pagination';
+import EmptyState from '../../components/common/EmptyState/EmptyState';
+import Loader from '../../components/common/Loader/Loader';
+import Icon from '../../components/common/Icon/Icon';
 import appointmentService from '../../services/appointmentService';
 import { APPOINTMENT_STATUS } from '../../utils/constants';
-import { formatDate, formatTime } from '../../utils/helpers';
+import { formatDate } from '../../utils/helpers';
 import styles from './Appointments.module.css';
 
 const STATUS_TABS = [
   { key: 'all', label: 'All' },
-  { key: 'pending', label: 'Pending' },
+  { key: 'pending', label: 'Requests' },
+  { key: 'accepted', label: 'Accepted' },
   { key: 'confirmed', label: 'Confirmed' },
+  { key: 'in_progress', label: 'In Progress' },
   { key: 'completed', label: 'Completed' },
   { key: 'cancelled', label: 'Cancelled' },
 ];
@@ -30,6 +34,10 @@ export default function Appointments() {
   const [totalPages, setTotalPages] = useState(1);
   const [selected, setSelected] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+
+  // Rejection dialog state
+  const [rejectTarget, setRejectTarget] = useState(null);
+  const [rejectReason, setRejectReason] = useState('');
 
   const loadAppointments = useCallback(async () => {
     try {
@@ -55,96 +63,128 @@ export default function Appointments() {
     loadAppointments();
   }, [loadAppointments]);
 
-  const handleStatusUpdate = async (uuid, status) => {
+  const handleAction = async (appointment, action) => {
+    if (action === 'reject') {
+      setRejectTarget(appointment);
+      setRejectReason('');
+      return;
+    }
     try {
       setActionLoading(true);
-      const payload = { status };
-      if (status === 'cancelled') payload.reason = 'Cancelled by vet';
-      await appointmentService.updateStatus(uuid, payload);
+      if (action === 'accept') {
+        await appointmentService.accept(appointment.uuid);
+      } else if (action === 'start') {
+        await appointmentService.start(appointment.uuid);
+      } else if (action === 'complete') {
+        await appointmentService.complete(appointment.uuid);
+      } else if (action === 'cancel') {
+        await appointmentService.cancel(appointment.uuid, { reason: 'Cancelled by vet' });
+      }
       setSelected(null);
       loadAppointments();
     } catch (err) {
-      setError(err?.response?.data?.message || 'Failed to update appointment status');
+      setError(err?.response?.data?.message || 'Failed to update appointment');
     } finally {
       setActionLoading(false);
     }
   };
 
-  const columns = [
-    {
-      key: 'user',
-      label: 'Pet Owner',
-      render: (row) => (
-        <div>
-          <div className={styles.name}>{row.user?.name || '—'}</div>
-          <div className={styles.meta}>{row.user?.email || ''}</div>
-        </div>
-      ),
-    },
-    {
-      key: 'pet',
-      label: 'Pet',
-      render: (row) => row.pet?.name || '—',
-    },
-    {
-      key: 'date',
-      label: 'Date & Time',
-      render: (row) => (
-        <div>
-          <div>{formatDate(row.scheduled_at)}</div>
-          <div className={styles.meta}>{row.scheduled_at ? new Date(row.scheduled_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '—'}</div>
-        </div>
-      ),
-    },
-    {
-      key: 'reason',
-      label: 'Reason',
-      render: (row) => (
-        <span className={styles.reason}>{row.reason || '—'}</span>
-      ),
-    },
-    {
-      key: 'status',
-      label: 'Status',
-      render: (row) => (
-        <Badge variant={APPOINTMENT_STATUS[row.status]?.variant || 'default'}>
-          {APPOINTMENT_STATUS[row.status]?.label || row.status}
-        </Badge>
-      ),
-    },
-    {
-      key: 'actions',
-      label: '',
-      render: (row) => (
-        <Button size="sm" variant="ghost" onClick={() => setSelected(row)}>
-          View
-        </Button>
-      ),
-    },
-  ];
+  const handleRejectSubmit = async () => {
+    if (!rejectReason.trim()) return;
+    try {
+      setActionLoading(true);
+      await appointmentService.reject(rejectTarget.uuid, { reason: rejectReason.trim() });
+      setRejectTarget(null);
+      setRejectReason('');
+      setSelected(null);
+      loadAppointments();
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to reject appointment');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Group appointments by date
+  const grouped = {};
+  appointments.forEach((appt) => {
+    const dateKey = appt.scheduled_at ? appt.scheduled_at.split('T')[0] : 'unknown';
+    if (!grouped[dateKey]) grouped[dateKey] = [];
+    grouped[dateKey].push(appt);
+  });
+  const dateKeys = Object.keys(grouped).sort((a, b) => a.localeCompare(b));
 
   return (
     <div className={styles.page}>
-      {error && <div className={styles.error || 'error'}>{error}</div>}
+      {error && <div className={styles.errorBar}>{error}</div>}
       <div className={styles.toolbar}>
         <SearchBar value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search appointments..." />
       </div>
 
       <Tabs tabs={STATUS_TABS} active={tab} onChange={(t) => { setTab(t); setPage(1); }} />
 
-      <Card noPadding>
-        <Table
-          columns={columns}
-          data={appointments}
-          loading={loading}
-          keyField="uuid"
-          emptyTitle="No appointments found"
-          emptyMessage="Appointments from pet owners will show up here."
-        />
-      </Card>
+      {loading ? (
+        <Loader fullPage />
+      ) : appointments.length === 0 ? (
+        <Card>
+          <EmptyState
+            icon="appointments"
+            title="No appointments found"
+            message="Appointments from pet owners will show up here."
+          />
+        </Card>
+      ) : (
+        <div className={styles.dateGroups}>
+          {dateKeys.map((dateKey) => (
+            <div key={dateKey} className={styles.dateGroup}>
+              <div className={styles.dateHeader}>
+                {dateKey === 'unknown' ? 'Unscheduled' : formatDate(dateKey)}
+              </div>
+              <div className={styles.cardList}>
+                {grouped[dateKey].map((appt) => (
+                  <div key={appt.uuid || appt.id} className={styles.apptCard} onClick={() => setSelected(appt)}>
+                    <div className={styles.apptTime}>
+                      {appt.scheduled_at
+                        ? new Date(appt.scheduled_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+                        : '—'}
+                    </div>
+                    <div className={styles.apptBody}>
+                      <div className={styles.apptTop}>
+                        <span className={styles.apptPet}>
+                          {appt.pet?.name || 'Pet'} {appt.pet?.species ? `(${appt.pet.species})` : ''}
+                        </span>
+                        <Badge variant={APPOINTMENT_STATUS[appt.status]?.variant || 'default'} size="sm">
+                          {APPOINTMENT_STATUS[appt.status]?.label || appt.status}
+                        </Badge>
+                      </div>
+                      <span className={styles.apptOwner}>{appt.user?.name || 'Pet Owner'}</span>
+                      {appt.reason && <span className={styles.apptReason}>{appt.reason}</span>}
+                    </div>
+                    <div className={styles.apptActions} onClick={(e) => e.stopPropagation()}>
+                      {appt.status === 'pending' && (
+                        <>
+                          <Button size="sm" variant="success" onClick={() => handleAction(appt, 'accept')}>Accept</Button>
+                          <Button size="sm" variant="ghost" onClick={() => handleAction(appt, 'reject')}>Decline</Button>
+                        </>
+                      )}
+                      {(appt.status === 'accepted' || appt.status === 'confirmed') && (
+                        <Button size="sm" variant="primary" onClick={() => handleAction(appt, 'start')}>Start</Button>
+                      )}
+                      {appt.status === 'in_progress' && (
+                        <Button size="sm" variant="success" onClick={() => handleAction(appt, 'complete')}>Complete</Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
+      {/* Detail Modal */}
       {selected && (
         <Modal
           open={!!selected}
@@ -191,37 +231,74 @@ export default function Appointments() {
             )}
           </div>
 
-          {(selected.status === 'pending' || selected.status === 'confirmed') && (
+          {(['pending', 'accepted', 'confirmed', 'in_progress'].includes(selected.status)) && (
             <div className={styles.actions}>
               {selected.status === 'pending' && (
-                <Button
-                  variant="success"
-                  loading={actionLoading}
-                  onClick={() => handleStatusUpdate(selected.uuid, 'confirmed')}
-                >
-                  Confirm
+                <>
+                  <Button variant="success" loading={actionLoading} onClick={() => handleAction(selected, 'accept')}>
+                    Accept
+                  </Button>
+                  <Button variant="danger" loading={actionLoading} onClick={() => handleAction(selected, 'reject')}>
+                    Decline
+                  </Button>
+                </>
+              )}
+              {(selected.status === 'accepted' || selected.status === 'confirmed') && (
+                <Button variant="success" loading={actionLoading} onClick={() => handleAction(selected, 'start')}>
+                  Start Visit
                 </Button>
               )}
-              {selected.status === 'confirmed' && (
-                <Button
-                  variant="success"
-                  loading={actionLoading}
-                  onClick={() => handleStatusUpdate(selected.uuid, 'completed')}
-                >
-                  Mark Complete
+              {selected.status === 'in_progress' && (
+                <Button variant="success" loading={actionLoading} onClick={() => handleAction(selected, 'complete')}>
+                  Complete Visit
                 </Button>
               )}
-              {(selected.status === 'pending' || selected.status === 'confirmed') && (
-                <Button
-                  variant="danger"
-                  loading={actionLoading}
-                  onClick={() => handleStatusUpdate(selected.uuid, 'cancelled')}
-                >
+              {(selected.status === 'pending' || selected.status === 'accepted' || selected.status === 'confirmed') && (
+                <Button variant="danger" loading={actionLoading} onClick={() => handleAction(selected, 'cancel')}>
                   Cancel
                 </Button>
               )}
             </div>
           )}
+        </Modal>
+      )}
+
+      {/* Rejection Dialog */}
+      {rejectTarget && (
+        <Modal
+          open={!!rejectTarget}
+          onClose={() => setRejectTarget(null)}
+          title="Decline Appointment"
+          size="sm"
+        >
+          <div className={styles.rejectDialog}>
+            <p className={styles.rejectMessage}>
+              Decline <strong>{rejectTarget.pet?.name || 'this'}</strong>'s visit
+              {rejectTarget.scheduled_at && <> on {formatDate(rejectTarget.scheduled_at)}</>}?
+            </p>
+            <label className={styles.rejectLabel}>
+              Reason for declining <span className={styles.required}>(shared with pet owner)</span>
+            </label>
+            <textarea
+              className={styles.rejectTextarea}
+              rows={3}
+              placeholder="e.g., Schedule conflict, not my specialization..."
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              autoFocus
+            />
+            <div className={styles.rejectActions}>
+              <Button variant="ghost" onClick={() => setRejectTarget(null)}>Cancel</Button>
+              <Button
+                variant="danger"
+                loading={actionLoading}
+                onClick={handleRejectSubmit}
+                disabled={!rejectReason.trim()}
+              >
+                Decline Appointment
+              </Button>
+            </div>
+          </div>
         </Modal>
       )}
     </div>
