@@ -82,6 +82,9 @@ export default function Profile() {
     specialization: '',
     consultation_fee: '',
     home_visit_fee: '',
+    online_fee: '',
+    max_home_visit_km: '',
+    consultation_types_text: '',
     bio: '',
     profile_photo: '',
     qualifications: '',
@@ -147,6 +150,9 @@ export default function Profile() {
             specialization: vp.specialization || '',
             consultation_fee: vp.consultation_fee ?? '',
             home_visit_fee: vp.home_visit_fee ?? '',
+            online_fee: vp.online_fee ?? '',
+            max_home_visit_km: vp.max_home_visit_km ?? '',
+            consultation_types_text: Array.isArray(vp.consultation_types) ? vp.consultation_types.join(', ') : '',
             bio: vp.bio || '',
             profile_photo: vp.profile_photo || '',
             qualifications: vp.qualifications || '',
@@ -298,6 +304,11 @@ export default function Profile() {
         specialization: vetForm.specialization?.trim() || vetProfile?.specialization || '',
         consultation_fee: Number(vetForm.consultation_fee || 0),
         home_visit_fee: vetForm.home_visit_fee ? Number(vetForm.home_visit_fee) : Number(vetProfile?.home_visit_fee || 0),
+        online_fee: vetForm.online_fee ? Number(vetForm.online_fee) : 0,
+        max_home_visit_km: vetForm.max_home_visit_km ? Number(vetForm.max_home_visit_km) : 0,
+        consultation_types: vetForm.consultation_types_text
+          ? vetForm.consultation_types_text.split(',').map((item) => item.trim()).filter(Boolean)
+          : (Array.isArray(vetProfile?.consultation_types) ? vetProfile.consultation_types : ['clinic_visit']),
         services: vetForm.services_text
           ? vetForm.services_text.split(',').map((item) => item.trim()).filter(Boolean)
           : (Array.isArray(vetProfile?.services) ? vetProfile.services : []),
@@ -584,6 +595,28 @@ export default function Profile() {
                 type="number"
                 value={vetForm.home_visit_fee}
                 onChange={handleVetFormChange}
+              />
+              <FormInput
+                label="Online Consultation Fee (₹)"
+                name="online_fee"
+                type="number"
+                value={vetForm.online_fee}
+                onChange={handleVetFormChange}
+              />
+              <FormInput
+                label="Max Home Visit Distance (km)"
+                name="max_home_visit_km"
+                type="number"
+                value={vetForm.max_home_visit_km}
+                onChange={handleVetFormChange}
+                placeholder="e.g. 15"
+              />
+              <FormInput
+                label="Consultation Types (comma separated: clinic_visit, home_visit, online)"
+                name="consultation_types_text"
+                value={vetForm.consultation_types_text}
+                onChange={handleVetFormChange}
+                placeholder="clinic_visit, home_visit, online"
               />
               <FormInput
                 label="City"

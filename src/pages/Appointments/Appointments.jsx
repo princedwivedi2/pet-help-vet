@@ -10,6 +10,7 @@ import EmptyState from '../../components/common/EmptyState/EmptyState';
 import Loader from '../../components/common/Loader/Loader';
 import Icon from '../../components/common/Icon/Icon';
 import appointmentService from '../../services/appointmentService';
+import paymentService from '../../services/paymentService';
 import { APPOINTMENT_STATUS } from '../../utils/constants';
 import { formatDate } from '../../utils/helpers';
 import styles from './Appointments.module.css';
@@ -35,9 +36,27 @@ export default function Appointments() {
   const [selected, setSelected] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Rejection dialog state
   const [rejectTarget, setRejectTarget] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [recordingPayment, setRecordingPayment] = useState(false);
+
+  const handleRecordOfflinePayment = async (appointment) => {
+    try {
+      setRecordingPayment(true);
+      await paymentService.recordOffline({
+        payable_type: 'appointment',
+        payable_uuid: appointment.uuid,
+        amount: appointment.fee || appointment.consultation_fee || 500,
+        method: 'cash',
+      });
+      setError('');
+      loadAppointments();
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to record payment');
+    } finally {
+      setRecordingPayment(false);
+    }
+  };
 
   const loadAppointments = useCallback(async () => {
     try {
@@ -173,6 +192,9 @@ export default function Appointments() {
                       {appt.status === 'in_progress' && (
                         <Button size="sm" variant="success" onClick={() => handleAction(appt, 'complete')}>Complete</Button>
                       )}
+                      {appt.status === 'completed' && appt.payment_status !== 'paid' && appt.payment_status !== 'offline' && (
+                        <Button size="sm" variant="ghost" loading={recordingPayment} onClick={() => handleRecordOfflinePayment(appt)}>Record Cash</Button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -251,6 +273,11 @@ export default function Appointments() {
               {selected.status === 'in_progress' && (
                 <Button variant="success" loading={actionLoading} onClick={() => handleAction(selected, 'complete')}>
                   Complete Visit
+                </Button>
+              )}
+              {selected.status === 'completed' && selected.payment_status !== 'paid' && selected.payment_status !== 'offline' && (
+                <Button variant="ghost" loading={recordingPayment} onClick={() => handleRecordOfflinePayment(selected)}>
+                  Record Cash Payment
                 </Button>
               )}
               {(selected.status === 'pending' || selected.status === 'accepted' || selected.status === 'confirmed') && (

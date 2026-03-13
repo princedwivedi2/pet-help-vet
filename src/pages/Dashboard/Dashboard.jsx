@@ -100,7 +100,7 @@ export default function Dashboard() {
   const handleSosRespond = async (uuid) => {
     try {
       setActionLoading(uuid + '-sos');
-      await sosService.updateStatus(uuid, { status: 'acknowledged' });
+      await sosService.updateStatus(uuid, { status: 'sos_accepted', response_type: 'phone_guidance' });
       loadData();
     } catch (err) {
       setError(err?.response?.data?.message || 'Failed to respond');
@@ -187,7 +187,7 @@ export default function Dashboard() {
                         <Icon name="phone" size={14} /> Call
                       </a>
                     )}
-                    {sos.status === 'pending' ? (
+                    {(sos.status === 'pending' || sos.status === 'sos_pending') ? (
                       <Button
                         size="sm"
                         variant="danger"

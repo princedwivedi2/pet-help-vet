@@ -25,6 +25,7 @@ export const SOS_STATUS = {
   vet_on_the_way: { label: 'On the Way', variant: 'primary' },
   arrived: { label: 'Arrived', variant: 'primary' },
   in_progress: { label: 'In Progress', variant: 'danger' },
+  sos_in_progress: { label: 'Treating', variant: 'danger' },
   treatment_in_progress: { label: 'Treating', variant: 'danger' },
   completed: { label: 'Completed', variant: 'success' },
   sos_completed: { label: 'Completed', variant: 'success' },
