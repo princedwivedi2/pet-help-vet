@@ -28,16 +28,22 @@ const MISSING_FIELD_LINKS = {
   working_hours: '#availability-section',
   latitude: '#field-latitude',
   longitude: '#field-longitude',
+  license_document: '#doc-license',
+  degree_certificate: '#doc-degree',
+  government_id: '#doc-id_proof',
 };
 
 const MISSING_FIELD_LABELS = {
   profile_photo: 'Upload Profile Photo',
-  license_number: 'Add License Number',
+  license_number: 'Add License Number (Text)',
   qualification: 'Add Qualification',
   clinic_address: 'Add Clinic Address',
   working_hours: 'Add Working Hours',
   latitude: 'Add Latitude',
   longitude: 'Add Longitude',
+  license_document: 'Upload License Proof',
+  degree_certificate: 'Upload Degree Certificate',
+  government_id: 'Upload Government ID',
 };
 
 const PROFILE_TABS = [
@@ -102,11 +108,13 @@ export default function Profile() {
   const [deleting, setDeleting] = useState(false);
   const [uploadingDoc, setUploadingDoc] = useState('');
   const [profileStatus, setProfileStatus] = useState({ completion_percentage: 0, missing_fields: [], is_complete: false });
+  const [docStatus, setDocStatus] = useState({});
   const [docFiles, setDocFiles] = useState({
     license: null,
     degree: null,
     id_proof: null,
   });
+  const [viewingDoc, setViewingDoc] = useState('');
 
   useEffect(() => {
     loadProfile();
@@ -136,6 +144,7 @@ export default function Profile() {
         const vp = payload?.vet_profile || payload;
         setVetProfile(vp);
         setProfileStatus(payload?.profile_status || { completion_percentage: 0, missing_fields: [], is_complete: false });
+        setDocStatus(payload?.document_status || {});
         if (vp) {
           setVetForm({
             vet_name: vp.vet_name || '',
@@ -167,6 +176,13 @@ export default function Profile() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const isDocumentUploaded = (doc) => {
+    if (docStatus?.[doc.type] && typeof docStatus[doc.type].uploaded === 'boolean') {
+      return docStatus[doc.type].uploaded;
+    }
+    return !!vetProfile?.[doc.field];
   };
 
   const handleProfileChange = (e) => {
@@ -218,6 +234,21 @@ export default function Profile() {
       setError(err?.response?.data?.message || 'Failed to upload document.');
     } finally {
       setUploadingDoc('');
+    }
+  };
+
+  const handleViewDocument = async (type) => {
+    try {
+      setViewingDoc(type);
+      setError('');
+      const fileBlob = await vetProfileService.getDocument(type);
+      const fileUrl = URL.createObjectURL(fileBlob);
+      window.open(fileUrl, '_blank', 'noopener,noreferrer');
+      window.setTimeout(() => URL.revokeObjectURL(fileUrl), 30000);
+    } catch (err) {
+      setError(err?.message || 'Unable to open document.');
+    } finally {
+      setViewingDoc('');
     }
   };
 
@@ -275,7 +306,7 @@ export default function Profile() {
       }
 
       const missingDocs = REQUIRED_DOCUMENTS
-        .filter((doc) => !vetProfile?.[doc.field])
+        .filter((doc) => !isDocumentUploaded(doc))
         .map((doc) => doc.label);
 
       if (missingDocs.length > 0) {
@@ -410,7 +441,7 @@ export default function Profile() {
 
   if (loading) return <Loader fullPage />;
 
-  const requiredDocsReady = REQUIRED_DOCUMENTS.every((doc) => !!vetProfile?.[doc.field]);
+  const requiredDocsReady = REQUIRED_DOCUMENTS.every((doc) => isDocumentUploaded(doc));
   const workingHoursReady = availabilities.length > 0 || (Array.isArray(vetProfile?.working_hours) && vetProfile.working_hours.length > 0);
   const requiredFieldsReady = [
     vetForm.profile_photo,
@@ -695,15 +726,24 @@ export default function Profile() {
               <div className={styles.docSection}>
                 <p className={styles.docTitle}>Required Verification Documents</p>
                 {REQUIRED_DOCUMENTS.map((doc) => (
-                  <div key={doc.type} className={styles.docRow}>
+                  <div key={doc.type} className={styles.docRow} id={`doc-${doc.type}`}>
                     <div className={styles.docMeta}>
                       <strong>{doc.label}</strong>
-                      <span>{vetProfile?.[doc.field] ? 'Uploaded' : 'Missing'}</span>
+                      <span className={styles.docStatus}>
+                        {isDocumentUploaded(doc) ? (
+                          <span className={styles.docStatusUploaded}>✓ Uploaded</span>
+                        ) : docFiles[doc.type] ? (
+                          <span className={styles.docStatusSelected}>📄 {docFiles[doc.type].name}</span>
+                        ) : (
+                          <span className={styles.docStatusMissing}>Missing</span>
+                        )}
+                      </span>
                     </div>
                     <div className={styles.docActions}>
                       <input
                         type="file"
                         accept=".pdf,.jpg,.jpeg,.png"
+                        className={styles.fileInput}
                         onChange={(e) =>
                           setDocFiles((prev) => ({ ...prev, [doc.type]: e.target.files?.[0] || null }))
                         }
@@ -713,9 +753,21 @@ export default function Profile() {
                         size="sm"
                         onClick={() => handleUploadDocument(doc.type)}
                         loading={uploadingDoc === doc.type}
+                        disabled={!docFiles[doc.type]}
                       >
                         Upload
                       </Button>
+                      {isDocumentUploaded(doc) && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => handleViewDocument(doc.type)}
+                          loading={viewingDoc === doc.type}
+                        >
+                          View
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}

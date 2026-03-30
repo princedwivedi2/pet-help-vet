@@ -15,6 +15,16 @@ import { APPOINTMENT_STATUS, SOS_STATUS, VET_STATUS } from '../../utils/constant
 import { formatTime, timeAgo } from '../../utils/helpers';
 import styles from './Dashboard.module.css';
 
+const MISSING_FIELD_LABELS = {
+  profile_photo: 'Profile Photo',
+  license_number: 'License Number',
+  qualification: 'Qualification',
+  clinic_address: 'Clinic Address',
+  working_hours: 'Working Hours',
+  latitude: 'Latitude',
+  longitude: 'Longitude',
+};
+
 export default function Dashboard() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -25,12 +35,25 @@ export default function Dashboard() {
   const [vetProfile, setVetProfile] = useState(null);
   const [actionLoading, setActionLoading] = useState('');
   const [stats, setStats] = useState({ today: 0, pending: 0, earned: 0 });
+  const [profileStatus, setProfileStatus] = useState({ completion_percentage: 0, missing_fields: [], is_complete: false });
+  const [accessNotice, setAccessNotice] = useState('');
 
   useEffect(() => { loadData(); }, []);
+
+  const ensureApproved = () => {
+    if (vetProfile?.vet_status !== 'approved') {
+      setAccessNotice((msg) => msg || 'Appointment actions are disabled until admin approves your vet profile.');
+      return false;
+    }
+
+    return true;
+  };
 
   const loadData = async () => {
     try {
       setLoading(true);
+      setError('');
+      let notice = '';
       const [apptRes, sosRes, profileRes] = await Promise.allSettled([
         appointmentService.getAll({ per_page: 100 }),
         sosService.getActive(),
@@ -56,16 +79,38 @@ export default function Dashboard() {
           today: todayList.length,
           pending: pendingList.length,
         }));
+      } else if (apptRes.status === 'rejected') {
+        setTodayAppts([]);
+        setPendingAppts([]);
+        setStats((s) => ({ ...s, today: 0, pending: 0 }));
+
+        const res = apptRes.reason?.response;
+        if (res?.status === 403) {
+          notice = res.data?.message || 'Appointments are locked until your profile is approved by admin.';
+        } else {
+          setError(res?.data?.message || 'Failed to load appointments');
+        }
       }
 
       if (sosRes.status === 'fulfilled') {
         const list = sosRes.value?.data?.sos_requests || sosRes.value?.data || [];
         setActiveSos(Array.isArray(list) ? list : []);
+      } else {
+        setActiveSos([]);
       }
 
       if (profileRes.status === 'fulfilled') {
-        setVetProfile(profileRes.value?.data?.vet_profile || profileRes.value?.data);
+        const payload = profileRes.value?.data || profileRes.value;
+        const vet = payload?.vet_profile || payload;
+        setVetProfile(vet);
+        setProfileStatus(payload?.profile_status || { completion_percentage: 0, missing_fields: [], is_complete: false });
+
+        if (vet?.vet_status && vet.vet_status !== 'approved') {
+          notice = notice || 'Your vet profile is awaiting admin approval. Complete missing fields to unlock appointments.';
+        }
       }
+
+      setAccessNotice(notice);
     } catch (err) {
       setError(err?.response?.data?.message || 'Failed to load data');
     } finally {
@@ -74,6 +119,7 @@ export default function Dashboard() {
   };
 
   const handleAccept = async (uuid) => {
+    if (!ensureApproved()) return;
     try {
       setActionLoading(uuid + '-accept');
       await appointmentService.accept(uuid);
@@ -86,6 +132,7 @@ export default function Dashboard() {
   };
 
   const handleDecline = async (uuid) => {
+    if (!ensureApproved()) return;
     try {
       setActionLoading(uuid + '-decline');
       await appointmentService.reject(uuid, { reason: 'Declined from today view' });
@@ -98,6 +145,7 @@ export default function Dashboard() {
   };
 
   const handleSosRespond = async (uuid) => {
+    if (!ensureApproved()) return;
     try {
       setActionLoading(uuid + '-sos');
       await sosService.updateStatus(uuid, { status: 'sos_accepted', response_type: 'phone_guidance' });
@@ -109,7 +157,38 @@ export default function Dashboard() {
     }
   };
 
+  const handleStartVisit = async (uuid) => {
+    if (!ensureApproved()) return;
+    try {
+      setActionLoading(uuid + '-start');
+      await appointmentService.start(uuid);
+      loadData();
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to start visit');
+    } finally {
+      setActionLoading('');
+    }
+  };
+
+  const handleCompleteVisit = async (uuid) => {
+    if (!ensureApproved()) return;
+    try {
+      setActionLoading(uuid + '-complete');
+      await appointmentService.complete(uuid);
+      loadData();
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to complete visit');
+    } finally {
+      setActionLoading('');
+    }
+  };
+
   if (loading) return <Loader fullPage />;
+
+  const isApproved = vetProfile?.vet_status === 'approved';
+  const completionPercent = Number(profileStatus.completion_percentage || 0);
+  const missingFields = Array.isArray(profileStatus.missing_fields) ? profileStatus.missing_fields : [];
+  const actionsDisabled = !isApproved;
 
   const now = new Date();
   const greeting = now.getHours() < 12 ? 'Good morning' : now.getHours() < 17 ? 'Good afternoon' : 'Good evening';
@@ -120,16 +199,41 @@ export default function Dashboard() {
     <div className={styles.dashboard}>
       {error && <div className={styles.error}>{error}</div>}
 
-      {vetProfile && vetProfile.vet_status !== 'approved' && (
-        <div className={styles.alert}>
-          <Icon name="shield" />
-          <div>
-            <strong>Verification: </strong>
-            <Badge variant={VET_STATUS[vetProfile.vet_status]?.variant || 'warning'}>
-              {VET_STATUS[vetProfile.vet_status]?.label || vetProfile.vet_status}
+      {(accessNotice || (vetProfile && (!profileStatus.is_complete || !isApproved))) && (
+        <div className={styles.progressCard}>
+          <div className={styles.progressTop}>
+            <div>
+              <div className={styles.progressLabel}>Onboarding Status</div>
+              <div className={styles.progressMeta}>
+                {isApproved ? 'Approved — appointments unlocked' : 'Waiting for admin approval'}
+              </div>
+            </div>
+            <Badge variant={VET_STATUS[vetProfile?.vet_status || 'pending']?.variant || 'warning'}>
+              {VET_STATUS[vetProfile?.vet_status || 'pending']?.label || vetProfile?.vet_status || 'Pending'}
             </Badge>
-            <span className={styles.alertText}> Complete your profile to start receiving appointments.</span>
           </div>
+
+          <div className={styles.progressBar}>
+            <div className={styles.progressFill} style={{ width: `${completionPercent}%` }} />
+          </div>
+
+          <div className={styles.progressFooter}>
+            <span className={styles.progressPercent}>{completionPercent}% complete</span>
+            <span className={styles.progressNote}>
+              {accessNotice || (isApproved ? 'You can now take appointments.' : 'Complete missing fields and wait for admin approval.')}
+            </span>
+          </div>
+
+          {missingFields.length > 0 && (
+            <div className={styles.missingChips}>
+              {missingFields.slice(0, 4).map((field) => (
+                <span key={field} className={styles.missingChip}>{MISSING_FIELD_LABELS[field] || field}</span>
+              ))}
+              {missingFields.length > 4 && (
+                <span className={styles.missingChip}>+{missingFields.length - 4} more</span>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -191,6 +295,7 @@ export default function Dashboard() {
                       <Button
                         size="sm"
                         variant="danger"
+                        disabled={actionsDisabled}
                         loading={actionLoading === sos.uuid + '-sos'}
                         onClick={() => handleSosRespond(sos.uuid)}
                       >
@@ -271,14 +376,26 @@ export default function Dashboard() {
                     {appt.reason && <span className={styles.timelineReason}>{appt.reason}</span>}
                     {(appt.status === 'confirmed' || appt.status === 'accepted') && (
                       <div className={styles.timelineActions}>
-                        <Button size="sm" variant="primary" onClick={() => appointmentService.start(appt.uuid).then(loadData)}>
+                        <Button
+                          size="sm"
+                          variant="primary"
+                          disabled={actionsDisabled}
+                          loading={actionLoading === appt.uuid + '-start'}
+                          onClick={() => handleStartVisit(appt.uuid)}
+                        >
                           Start Visit
                         </Button>
                       </div>
                     )}
                     {appt.status === 'in_progress' && (
                       <div className={styles.timelineActions}>
-                        <Button size="sm" variant="success" onClick={() => appointmentService.complete(appt.uuid).then(loadData)}>
+                        <Button
+                          size="sm"
+                          variant="success"
+                          disabled={actionsDisabled}
+                          loading={actionLoading === appt.uuid + '-complete'}
+                          onClick={() => handleCompleteVisit(appt.uuid)}
+                        >
                           Complete
                         </Button>
                       </div>
@@ -326,6 +443,7 @@ export default function Dashboard() {
                   <Button
                     size="sm"
                     variant="success"
+                    disabled={actionsDisabled}
                     loading={actionLoading === appt.uuid + '-accept'}
                     onClick={() => handleAccept(appt.uuid)}
                   >
@@ -334,6 +452,7 @@ export default function Dashboard() {
                   <Button
                     size="sm"
                     variant="ghost"
+                    disabled={actionsDisabled}
                     loading={actionLoading === appt.uuid + '-decline'}
                     onClick={() => handleDecline(appt.uuid)}
                   >

@@ -15,6 +15,13 @@ const vetProfileService = {
     });
   },
 
+  getDocument(type) {
+    return api.get(`/vet/documents/${type}`, {
+      responseType: 'blob',
+      headers: { Accept: 'application/pdf,image/*' },
+    });
+  },
+
   getAvailabilities() {
     return api.get('/vet/availabilities');
   },

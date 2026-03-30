@@ -172,6 +172,7 @@
   flex-direction: column;
   gap: 3px;
   font-size: var(--font-sm);
+  flex: 1;
 }
 
 .docMeta span {
@@ -179,10 +180,71 @@
   font-weight: 500;
 }
 
+.docStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-xs);
+  font-weight: 600;
+}
+
+.docStatusUploaded {
+  color: var(--color-success);
+}
+
+.docStatusSelected {
+  color: var(--color-primary);
+}
+
+.docStatusMissing {
+  color: var(--color-danger);
+}
+
 .docActions {
   display: flex;
   gap: 8px;
   align-items: center;
+}
+
+.docActions input[type="file"] {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: var(--font-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.docActions input[type="file"]:hover {
+  border-color: var(--color-primary);
+  background: var(--color-bg);
+}
+
+.docActions input[type="file"]::file-selector-button {
+  padding: 6px 12px;
+  margin-right: 8px;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  cursor: pointer;
+  font-size: var(--font-xs);
+}
+
+.fileInput {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: var(--font-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
 }
 
 .completionCard {
