@@ -174,6 +174,63 @@
   background: var(--color-border);
 }
 
+/* ── Gradient Stat Cards ── */
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.statCard {
+  border-radius: var(--radius-xl);
+  padding: 20px 22px;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+}
+
+.statCardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.statCardLabel {
+  font-size: var(--font-xs);
+  font-weight: 600;
+  opacity: 0.85;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.statCardTrend {
+  font-size: 16px;
+}
+
+.statCardValue {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+@media (max-width: 640px) {
+  .statGrid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+
+  .statCard {
+    padding: 16px;
+  }
+
+  .statCardValue {
+    font-size: 1.5rem;
+  }
+}
+
 /* ── Emergency Section ── */
 .emergencySection {
   background: var(--color-danger-light);

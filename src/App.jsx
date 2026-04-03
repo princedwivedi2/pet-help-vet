@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/layout/Layout';
 import Login from './pages/Login/Login';
+import Loader from './components/common/Loader/Loader';
 import Dashboard from './pages/Dashboard/Dashboard';
 import Appointments from './pages/Appointments/Appointments';
 import VisitRecords from './pages/VisitRecords/VisitRecords';
@@ -12,7 +13,8 @@ import Notifications from './pages/Notifications/Notifications';
 import { useAuth } from './hooks/useAuth';
 
 function ProtectedRoute({ children }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
+  if (loading) return <Loader fullPage />;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   return children;
 }

@@ -2,7 +2,7 @@ import { useEffect, useState, Fragment } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Card from '../../components/common/Card/Card';
-import Loader from '../../components/common/Loader/Loader';
+import Skeleton from '../../components/common/Skeleton/Skeleton';
 import Badge from '../../components/common/Badge/Badge';
 import Button from '../../components/common/Button/Button';
 import EmptyState from '../../components/common/EmptyState/EmptyState';
@@ -183,7 +183,34 @@ export default function Dashboard() {
     }
   };
 
-  if (loading) return <Loader fullPage />;
+  if (loading) return (
+    <div style={{ padding: '24px 0', display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} style={{ background: 'var(--color-surface)', borderRadius: 'var(--radius-xl)', padding: 22, border: '1px solid var(--color-border-light)', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+            <Skeleton variant="circle" width="46px" height="46px" style={{ flexShrink: 0 }} />
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <Skeleton variant="line" width="50%" height="11px" />
+              <Skeleton variant="line" width="40%" height="22px" />
+              <Skeleton variant="line" width="65%" height="10px" />
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} style={{ background: 'var(--color-surface)', borderRadius: 'var(--radius-xl)', padding: '16px 18px', border: '1px solid var(--color-border-light)', display: 'flex', gap: 12, alignItems: 'center' }}>
+            <Skeleton variant="circle" width="36px" height="36px" style={{ flexShrink: 0 }} />
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 7 }}>
+              <Skeleton variant="line" width="60%" height="13px" />
+              <Skeleton variant="line" width="35%" height="11px" />
+            </div>
+            <Skeleton variant="rect" width="70px" height="26px" style={{ borderRadius: 99 }} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   const isApproved = vetProfile?.vet_status === 'approved';
   const completionPercent = Number(profileStatus.completion_percentage || 0);
@@ -243,21 +270,30 @@ export default function Dashboard() {
           <h2 className={styles.greeting}>{greeting}, {user?.name?.split(' ')[0] || 'Doctor'}</h2>
           <p className={styles.dateStr}>{dateStr}</p>
         </div>
-        <div className={styles.quickStats}>
-          <div className={styles.quickStat}>
-            <span className={styles.quickStatValue}>{stats.today}</span>
-            <span className={styles.quickStatLabel}>Today</span>
+      </div>
+
+      {/* Gradient Stat Cards */}
+      <div className={styles.statGrid}>
+        <div className={styles.statCard} style={{ background: 'linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)' }}>
+          <div className={styles.statCardTop}>
+            <span className={styles.statCardLabel}>Today's Appts</span>
+            <span className={styles.statCardTrend}>📅</span>
           </div>
-          <div className={styles.quickStatDivider} />
-          <div className={styles.quickStat}>
-            <span className={styles.quickStatValue}>{stats.pending}</span>
-            <span className={styles.quickStatLabel}>Pending</span>
+          <span className={styles.statCardValue}>{stats.today}</span>
+        </div>
+        <div className={styles.statCard} style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%)' }}>
+          <div className={styles.statCardTop}>
+            <span className={styles.statCardLabel}>Pending Requests</span>
+            <span className={styles.statCardTrend}>{stats.pending > 0 ? '↑' : '—'}</span>
           </div>
-          <div className={styles.quickStatDivider} />
-          <div className={styles.quickStat}>
-            <span className={`${styles.quickStatValue} ${activeSos.length > 0 ? styles.danger : ''}`}>{activeSos.length}</span>
-            <span className={styles.quickStatLabel}>SOS</span>
+          <span className={styles.statCardValue}>{stats.pending}</span>
+        </div>
+        <div className={styles.statCard} style={{ background: activeSos.length > 0 ? 'linear-gradient(135deg, #dc2626 0%, #f87171 100%)' : 'linear-gradient(135deg, #059669 0%, #34d399 100%)' }}>
+          <div className={styles.statCardTop}>
+            <span className={styles.statCardLabel}>Active SOS</span>
+            <span className={styles.statCardTrend}>{activeSos.length > 0 ? '🚨' : '✓'}</span>
           </div>
+          <span className={styles.statCardValue}>{activeSos.length}</span>
         </div>
       </div>
 

@@ -24,11 +24,16 @@ export default function Navbar({ onToggleSidebar }) {
   const meta = PAGE_META[location.pathname] || { group: null, title: 'Dashboard' };
 
   useEffect(() => {
-    notificationService.getUnreadCount()
-      .then((res) => {
-        setUnreadCount(res?.data?.unread_count ?? res?.data?.count ?? 0);
-      })
-      .catch(() => {});
+    const fetchCount = () => {
+      notificationService.getUnreadCount()
+        .then((res) => {
+          setUnreadCount(res?.data?.unread_count ?? res?.data?.count ?? 0);
+        })
+        .catch(() => {});
+    };
+    fetchCount();
+    const interval = setInterval(fetchCount, 30000);
+    return () => clearInterval(interval);
   }, [location.pathname]);
 
   return (

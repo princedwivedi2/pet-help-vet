@@ -88,6 +88,12 @@ export default function Login() {
           <button type="submit" className={styles.button} disabled={loading}>
             {loading ? <span className={styles.spinner} /> : 'Sign In'}
           </button>
+
+          <p className={styles.forgotRow}>
+            <a href="http://localhost:3002/forgot-password" className={styles.forgotLink}>
+              Forgot password?
+            </a>
+          </p>
         </form>
       </motion.div>
     </div>

@@ -70,8 +70,10 @@ export function AuthProvider({ children }) {
   };
 
   useEffect(() => {
-    if (localStorage.getItem('vet_token') && !user) {
+    if (localStorage.getItem('vet_token')) {
       refreshUser();
+    } else {
+      setLoading(false);
     }
   }, []);
 

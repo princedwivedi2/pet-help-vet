@@ -52,7 +52,7 @@ export default function Appointments() {
       setError('');
       loadAppointments();
     } catch (err) {
-      setError(err?.response?.data?.message || 'Failed to record payment');
+      setError(err?.message || 'Failed to record payment');
     } finally {
       setRecordingPayment(false);
     }
@@ -72,7 +72,7 @@ export default function Appointments() {
       setTotalPages(res?.data?.pagination?.last_page || res?.data?.last_page || 1);
     } catch (err) {
       setAppointments([]);
-      setError(err?.response?.data?.message || 'Failed to load appointments');
+      setError(err?.message || 'Failed to load appointments');
     } finally {
       setLoading(false);
     }
@@ -102,7 +102,7 @@ export default function Appointments() {
       setSelected(null);
       loadAppointments();
     } catch (err) {
-      setError(err?.response?.data?.message || 'Failed to update appointment');
+      setError(err?.message || 'Failed to update appointment');
     } finally {
       setActionLoading(false);
     }
@@ -118,7 +118,7 @@ export default function Appointments() {
       setSelected(null);
       loadAppointments();
     } catch (err) {
-      setError(err?.response?.data?.message || 'Failed to reject appointment');
+      setError(err?.message || 'Failed to reject appointment');
     } finally {
       setActionLoading(false);
     }

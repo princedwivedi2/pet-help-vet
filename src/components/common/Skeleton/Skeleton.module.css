@@ -1,0 +1,38 @@
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.base {
+  background: linear-gradient(
+    90deg,
+    var(--color-border-light, #f3ede6) 25%,
+    var(--color-surface-warm, #fdf8f3) 50%,
+    var(--color-border-light, #f3ede6) 75%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: var(--radius-sm, 8px);
+  display: block;
+  flex-shrink: 0;
+}
+
+.line {
+  height: 14px;
+  border-radius: 6px;
+  width: 100%;
+}
+
+.rect {
+  border-radius: var(--radius-md, 12px);
+}
+
+.circle {
+  border-radius: 50%;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}

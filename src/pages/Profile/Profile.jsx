@@ -90,7 +90,7 @@ export default function Profile() {
     home_visit_fee: '',
     online_fee: '',
     max_home_visit_km: '',
-    consultation_types_text: '',
+    consultation_types: ['clinic_visit'],
     bio: '',
     profile_photo: '',
     qualifications: '',
@@ -161,7 +161,7 @@ export default function Profile() {
             home_visit_fee: vp.home_visit_fee ?? '',
             online_fee: vp.online_fee ?? '',
             max_home_visit_km: vp.max_home_visit_km ?? '',
-            consultation_types_text: Array.isArray(vp.consultation_types) ? vp.consultation_types.join(', ') : '',
+            consultation_types: Array.isArray(vp.consultation_types) ? vp.consultation_types : ['clinic_visit'],
             bio: vp.bio || '',
             profile_photo: vp.profile_photo || '',
             qualifications: vp.qualifications || '',
@@ -337,9 +337,7 @@ export default function Profile() {
         home_visit_fee: vetForm.home_visit_fee ? Number(vetForm.home_visit_fee) : Number(vetProfile?.home_visit_fee || 0),
         online_fee: vetForm.online_fee ? Number(vetForm.online_fee) : 0,
         max_home_visit_km: vetForm.max_home_visit_km ? Number(vetForm.max_home_visit_km) : 0,
-        consultation_types: vetForm.consultation_types_text
-          ? vetForm.consultation_types_text.split(',').map((item) => item.trim()).filter(Boolean)
-          : (Array.isArray(vetProfile?.consultation_types) ? vetProfile.consultation_types : ['clinic_visit']),
+        consultation_types: vetForm.consultation_types.length > 0 ? vetForm.consultation_types : ['clinic_visit'],
         services: vetForm.services_text
           ? vetForm.services_text.split(',').map((item) => item.trim()).filter(Boolean)
           : (Array.isArray(vetProfile?.services) ? vetProfile.services : []),
@@ -642,13 +640,49 @@ export default function Profile() {
                 onChange={handleVetFormChange}
                 placeholder="e.g. 15"
               />
-              <FormInput
-                label="Consultation Types (comma separated: clinic_visit, home_visit, online)"
-                name="consultation_types_text"
-                value={vetForm.consultation_types_text}
-                onChange={handleVetFormChange}
-                placeholder="clinic_visit, home_visit, online"
-              />
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 8, color: '#374151' }}>
+                  Consultation Types
+                </label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {[
+                    { value: 'clinic_visit', label: 'Clinic Visit' },
+                    { value: 'home_visit', label: 'Home Visit' },
+                    { value: 'phone_consultation', label: 'Phone Consultation' },
+                    { value: 'video_call', label: 'Video Call' },
+                  ].map((opt) => {
+                    const checked = vetForm.consultation_types.includes(opt.value);
+                    return (
+                      <label
+                        key={opt.value}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 6,
+                          padding: '6px 12px', borderRadius: 20, cursor: 'pointer', fontSize: 13,
+                          border: `1.5px solid ${checked ? 'var(--color-primary, #f97316)' : '#d1d5db'}`,
+                          background: checked ? 'var(--color-primary-light, #fff7ed)' : '#fff',
+                          color: checked ? 'var(--color-primary, #f97316)' : '#374151',
+                          fontWeight: checked ? 600 : 400,
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          style={{ display: 'none' }}
+                          onChange={() => {
+                            setVetForm((f) => ({
+                              ...f,
+                              consultation_types: checked
+                                ? f.consultation_types.filter((v) => v !== opt.value)
+                                : [...f.consultation_types, opt.value],
+                            }));
+                          }}
+                        />
+                        {opt.label}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
               <FormInput
                 label="City"
                 name="city"

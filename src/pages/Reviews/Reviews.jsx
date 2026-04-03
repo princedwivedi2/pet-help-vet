@@ -60,9 +60,7 @@ export default function Reviews() {
       setTotalReviews(profile?.total_reviews || 0);
 
       if (vetUuid) {
-        const res = await reviewService.getForVet
-          ? reviewService.getForVet(vetUuid)
-          : fetch(`/api/v1/reviews/vet/${vetUuid}`).then((r) => r.json());
+        const res = await reviewService.getForVet(vetUuid);
         const data = res?.data;
         setReviews(data?.reviews?.data || data?.reviews || data?.data || []);
       }

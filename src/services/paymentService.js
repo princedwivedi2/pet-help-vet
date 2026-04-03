@@ -12,6 +12,10 @@ const paymentService = {
   getAll(params = {}) {
     return api.get('/payments', { params });
   },
+
+  requestPayout(data) {
+    return api.post('/vet/wallet/payout-request', data);
+  },
 };
 
 export default paymentService;

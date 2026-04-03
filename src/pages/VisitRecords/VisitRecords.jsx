@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import Card from '../../components/common/Card/Card';
 import Button from '../../components/common/Button/Button';
 import Modal from '../../components/common/Modal/Modal';
@@ -40,6 +40,13 @@ export default function VisitRecords() {
   const [viewTarget, setViewTarget] = useState(null);
   const [viewRecord, setViewRecord] = useState(null);
   const [viewLoading, setViewLoading] = useState(false);
+
+  // File uploads
+  const [prescriptionUploading, setPrescriptionUploading] = useState(false);
+  const [imagesUploading, setImagesUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const prescriptionInputRef = useRef(null);
+  const imagesInputRef = useRef(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -128,6 +135,44 @@ export default function VisitRecords() {
     }
   };
 
+  const handlePrescriptionUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !viewRecord?.uuid) return;
+    const fd = new FormData();
+    fd.append('prescription', file);
+    setUploadError('');
+    setPrescriptionUploading(true);
+    try {
+      await visitRecordService.uploadPrescription(viewRecord.uuid, fd);
+      const res = await visitRecordService.getForAppointment(viewTarget.uuid);
+      setViewRecord(res?.data?.visit_record || res?.data || null);
+    } catch (err) {
+      setUploadError(err?.message || 'Failed to upload prescription');
+    } finally {
+      setPrescriptionUploading(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleImagesUpload = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length || !viewRecord?.uuid) return;
+    const fd = new FormData();
+    files.forEach((f) => fd.append('images[]', f));
+    setUploadError('');
+    setImagesUploading(true);
+    try {
+      await visitRecordService.uploadImages(viewRecord.uuid, fd);
+      const res = await visitRecordService.getForAppointment(viewTarget.uuid);
+      setViewRecord(res?.data?.visit_record || res?.data || null);
+    } catch (err) {
+      setUploadError(err?.message || 'Failed to upload images');
+    } finally {
+      setImagesUploading(false);
+      e.target.value = '';
+    }
+  };
+
   return (
     <div className={styles.page}>
       {error && <div className={styles.errorBar}>{error}</div>}
@@ -211,6 +256,58 @@ export default function VisitRecords() {
               <div className={styles.recordField}>
                 <span className={styles.recordLabel}>Notes</span>
                 <span>{viewRecord.notes || '—'}</span>
+              </div>
+              {viewRecord.prescription_file && (
+                <div className={styles.recordField}>
+                  <span className={styles.recordLabel}>Prescription File</span>
+                  <a href={viewRecord.prescription_file} target="_blank" rel="noreferrer">View file</a>
+                </div>
+              )}
+              {viewRecord.images?.length > 0 && (
+                <div className={styles.recordField}>
+                  <span className={styles.recordLabel}>Images</span>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {viewRecord.images.map((img, i) => (
+                      <a key={i} href={img} target="_blank" rel="noreferrer">
+                        <img src={img} alt={`visit-${i + 1}`} style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 6 }} />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {uploadError && <p style={{ color: '#dc2626', fontSize: 13, margin: '8px 0 0' }}>{uploadError}</p>}
+              <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  loading={prescriptionUploading}
+                  onClick={() => prescriptionInputRef.current?.click()}
+                >
+                  Upload Prescription
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  loading={imagesUploading}
+                  onClick={() => imagesInputRef.current?.click()}
+                >
+                  Upload Images
+                </Button>
+                <input
+                  ref={prescriptionInputRef}
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  style={{ display: 'none' }}
+                  onChange={handlePrescriptionUpload}
+                />
+                <input
+                  ref={imagesInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  style={{ display: 'none' }}
+                  onChange={handleImagesUpload}
+                />
               </div>
             </div>
           ) : (

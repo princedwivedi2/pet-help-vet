@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import Card from '../../components/common/Card/Card';
 import Badge from '../../components/common/Badge/Badge';
 import Button from '../../components/common/Button/Button';
@@ -24,6 +24,9 @@ export default function SosRequests() {
   const [actionLoading, setActionLoading] = useState(false);
   const [responseType, setResponseType] = useState('phone_guidance');
   const [acceptTarget, setAcceptTarget] = useState(null);
+  const [sharingLocationFor, setSharingLocationFor] = useState(null);
+  const [locationShareError, setLocationShareError] = useState('');
+  const watchIdRef = useRef(null);
 
   const loadRequests = useCallback(async () => {
     try {
@@ -68,6 +71,54 @@ export default function SosRequests() {
     handleStatusUpdate(acceptTarget.uuid, 'sos_accepted', { response_type: responseType });
   };
 
+  const toggleLocationShare = (uuid) => {
+    if (sharingLocationFor === uuid) {
+      // Stop sharing
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+      }
+      setSharingLocationFor(null);
+      setLocationShareError('');
+      return;
+    }
+
+    if (!navigator.geolocation) {
+      setLocationShareError('Geolocation is not supported by your browser');
+      return;
+    }
+
+    setLocationShareError('');
+    // Clear any existing watch
+    if (watchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+    }
+
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      (pos) => {
+        setSharingLocationFor(uuid);
+        sosService.updateLocation(uuid, {
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+        }).catch(() => {});
+      },
+      () => {
+        setLocationShareError('Location access denied — enable GPS to share location');
+        setSharingLocationFor(null);
+        watchIdRef.current = null;
+      },
+      { enableHighAccuracy: true, maximumAge: 10000 }
+    );
+  };
+
+  useEffect(() => {
+    return () => {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+    };
+  }, []);
+
   if (loading) return <Loader fullPage />;
 
   return (
@@ -78,6 +129,7 @@ export default function SosRequests() {
       </div>
 
       {error && <div className={styles.error || 'error'}>{error}</div>}
+      {locationShareError && <div className={styles.error || 'error'}>{locationShareError}</div>}
 
       {requests.length === 0 ? (
         <Card>
@@ -154,6 +206,15 @@ export default function SosRequests() {
                     onClick={() => handleStatusUpdate(req.uuid, 'sos_completed')}
                   >
                     Resolve
+                  </Button>
+                )}
+                {(req.status === 'sos_accepted' || req.status === 'acknowledged' || req.status === 'sos_in_progress' || req.status === 'in_progress' || req.status === 'treatment_in_progress') && (
+                  <Button
+                    size="sm"
+                    variant={sharingLocationFor === req.uuid ? 'danger' : 'secondary'}
+                    onClick={() => toggleLocationShare(req.uuid)}
+                  >
+                    {sharingLocationFor === req.uuid ? 'Stop Location' : 'Share Location'}
                   </Button>
                 )}
               </div>
