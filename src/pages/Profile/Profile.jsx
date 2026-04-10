@@ -323,7 +323,7 @@ export default function Profile() {
         clinic_name: vetForm.clinic_name?.trim() || '',
         vet_name: vetForm.vet_name?.trim() || vetProfile?.vet_name || user?.name || '',
         phone: vetForm.phone?.trim() || vetProfile?.phone || profileForm.phone || '',
-        profile_photo: vetForm.profile_photo?.trim() || '',
+        ...(vetForm.profile_photo?.trim() ? { profile_photo: vetForm.profile_photo.trim() } : {}),
         clinic_address: vetForm.address?.trim() || '',
         city: vetForm.city?.trim() || vetProfile?.city || '',
         state: vetForm.state?.trim() || vetProfile?.state || '',
@@ -348,7 +348,7 @@ export default function Profile() {
       };
 
       const missingFields = [];
-      ['clinic_name', 'vet_name', 'phone', 'profile_photo', 'clinic_address', 'qualification', 'license_number'].forEach((field) => {
+      ['clinic_name', 'vet_name', 'phone', 'clinic_address', 'qualification', 'license_number'].forEach((field) => {
         if (!payload[field]) missingFields.push(field);
       });
       if (!payload.latitude || !payload.longitude) {
@@ -442,7 +442,6 @@ export default function Profile() {
   const requiredDocsReady = REQUIRED_DOCUMENTS.every((doc) => isDocumentUploaded(doc));
   const workingHoursReady = availabilities.length > 0 || (Array.isArray(vetProfile?.working_hours) && vetProfile.working_hours.length > 0);
   const requiredFieldsReady = [
-    vetForm.profile_photo,
     vetForm.qualifications,
     vetForm.license_number,
     vetForm.address,
