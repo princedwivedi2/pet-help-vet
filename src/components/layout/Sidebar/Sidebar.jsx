@@ -14,7 +14,6 @@ const NAV_GROUPS = [
     items: [
       { path: '/appointments', label: 'Appointments', icon: 'appointments' },
       { path: '/visit-records', label: 'Visit Records', icon: 'clipboardList' },
-      { path: '/sos', label: 'SOS Requests', icon: 'sos' },
     ],
   },
   {

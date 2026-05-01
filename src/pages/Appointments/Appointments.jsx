@@ -11,9 +11,27 @@ import Loader from '../../components/common/Loader/Loader';
 import Icon from '../../components/common/Icon/Icon';
 import appointmentService from '../../services/appointmentService';
 import paymentService from '../../services/paymentService';
+import vetProfileService from '../../services/vetProfileService';
 import { APPOINTMENT_STATUS } from '../../utils/constants';
 import { formatDate } from '../../utils/helpers';
 import styles from './Appointments.module.css';
+
+function haversineKm(lat1, lng1, lat2, lng2) {
+  const toRad = (d) => (d * Math.PI) / 180;
+  const R = 6371;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+function toNum(v) {
+  if (v === null || v === undefined || v === '') return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
 
 const STATUS_TABS = [
   { key: 'all', label: 'All' },
@@ -39,6 +57,20 @@ export default function Appointments() {
   const [rejectTarget, setRejectTarget] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
   const [recordingPayment, setRecordingPayment] = useState(false);
+  const [vetLocation, setVetLocation] = useState(null);
+
+  useEffect(() => {
+    vetProfileService
+      .getProfile()
+      .then((res) => {
+        const payload = res?.data || res;
+        const vp = payload?.vet_profile || payload;
+        const lat = toNum(vp?.latitude);
+        const lng = toNum(vp?.longitude);
+        if (lat !== null && lng !== null) setVetLocation({ lat, lng });
+      })
+      .catch(() => {});
+  }, []);
 
   const handleRecordOfflinePayment = async (appointment) => {
     try {
@@ -251,6 +283,69 @@ export default function Appointments() {
                 <span>{selected.notes}</span>
               </div>
             )}
+
+            {(() => {
+              const userLat = toNum(selected.user?.latitude);
+              const userLng = toNum(selected.user?.longitude);
+              const userAddress = selected.user?.address || selected.visit_address || '';
+              const hasCoords = userLat !== null && userLng !== null;
+              const hasAnyLocation = hasCoords || !!userAddress;
+              if (!hasAnyLocation) return null;
+
+              const distance =
+                hasCoords && vetLocation
+                  ? haversineKm(vetLocation.lat, vetLocation.lng, userLat, userLng)
+                  : null;
+
+              const destQuery = hasCoords
+                ? `${userLat},${userLng}`
+                : encodeURIComponent(userAddress);
+              const originQuery = vetLocation
+                ? `${vetLocation.lat},${vetLocation.lng}`
+                : '';
+              const viewUrl = `https://www.google.com/maps/search/?api=1&query=${destQuery}`;
+              const directionsUrl = `https://www.google.com/maps/dir/?api=1${
+                originQuery ? `&origin=${originQuery}` : ''
+              }&destination=${destQuery}&travelmode=driving`;
+
+              return (
+                <div className={styles.locationCard}>
+                  <div className={styles.locationHeader}>
+                    <span className={styles.locationTitle}>
+                      <Icon name="mapPin" size={14} /> Pet Owner Location
+                    </span>
+                    {distance !== null && (
+                      <span className={styles.locationDistance}>{distance.toFixed(1)} km away</span>
+                    )}
+                  </div>
+                  {userAddress ? (
+                    <div className={styles.locationAddress}>{userAddress}</div>
+                  ) : (
+                    <div className={styles.locationMissing}>
+                      Address not shared — map pin available
+                    </div>
+                  )}
+                  <div className={styles.locationActions}>
+                    <a
+                      href={viewUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.mapBtn}
+                    >
+                      <Icon name="mapPin" size={12} /> View on Map
+                    </a>
+                    <a
+                      href={directionsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`${styles.mapBtn} ${styles.mapBtnPrimary}`}
+                    >
+                      Get Directions
+                    </a>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
           {(['pending', 'accepted', 'confirmed', 'in_progress'].includes(selected.status)) && (

@@ -1,6 +1,5 @@
 import { useEffect, useState, Fragment } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import Card from '../../components/common/Card/Card';
 import Skeleton from '../../components/common/Skeleton/Skeleton';
 import Badge from '../../components/common/Badge/Badge';
@@ -8,10 +7,9 @@ import Button from '../../components/common/Button/Button';
 import EmptyState from '../../components/common/EmptyState/EmptyState';
 import Icon from '../../components/common/Icon/Icon';
 import appointmentService from '../../services/appointmentService';
-import sosService from '../../services/sosService';
 import vetProfileService from '../../services/vetProfileService';
 import { useAuth } from '../../hooks/useAuth';
-import { APPOINTMENT_STATUS, SOS_STATUS, VET_STATUS } from '../../utils/constants';
+import { APPOINTMENT_STATUS, VET_STATUS } from '../../utils/constants';
 import { formatTime, timeAgo } from '../../utils/helpers';
 import styles from './Dashboard.module.css';
 
@@ -31,7 +29,6 @@ export default function Dashboard() {
   const [error, setError] = useState('');
   const [todayAppts, setTodayAppts] = useState([]);
   const [pendingAppts, setPendingAppts] = useState([]);
-  const [activeSos, setActiveSos] = useState([]);
   const [vetProfile, setVetProfile] = useState(null);
   const [actionLoading, setActionLoading] = useState('');
   const [stats, setStats] = useState({ today: 0, pending: 0, earned: 0 });
@@ -54,9 +51,8 @@ export default function Dashboard() {
       setLoading(true);
       setError('');
       let notice = '';
-      const [apptRes, sosRes, profileRes] = await Promise.allSettled([
+      const [apptRes, profileRes] = await Promise.allSettled([
         appointmentService.getAll({ per_page: 100 }),
-        sosService.getActive(),
         vetProfileService.getProfile(),
       ]);
 
@@ -90,13 +86,6 @@ export default function Dashboard() {
         } else {
           setError(res?.data?.message || 'Failed to load appointments');
         }
-      }
-
-      if (sosRes.status === 'fulfilled') {
-        const list = sosRes.value?.data?.sos_requests || sosRes.value?.data || [];
-        setActiveSos(Array.isArray(list) ? list : []);
-      } else {
-        setActiveSos([]);
       }
 
       if (profileRes.status === 'fulfilled') {
@@ -139,19 +128,6 @@ export default function Dashboard() {
       loadData();
     } catch (err) {
       setError(err?.response?.data?.message || 'Failed to decline');
-    } finally {
-      setActionLoading('');
-    }
-  };
-
-  const handleSosRespond = async (uuid) => {
-    if (!ensureApproved()) return;
-    try {
-      setActionLoading(uuid + '-sos');
-      await sosService.updateStatus(uuid, { status: 'sos_accepted', response_type: 'phone_guidance' });
-      loadData();
-    } catch (err) {
-      setError(err?.response?.data?.message || 'Failed to respond');
     } finally {
       setActionLoading('');
     }
@@ -288,75 +264,14 @@ export default function Dashboard() {
           </div>
           <span className={styles.statCardValue}>{stats.pending}</span>
         </div>
-        <div className={styles.statCard} style={{ background: activeSos.length > 0 ? 'linear-gradient(135deg, #dc2626 0%, #f87171 100%)' : 'linear-gradient(135deg, #059669 0%, #34d399 100%)' }}>
+        <div className={styles.statCard} style={{ background: 'linear-gradient(135deg, #059669 0%, #34d399 100%)' }}>
           <div className={styles.statCardTop}>
-            <span className={styles.statCardLabel}>Active SOS</span>
-            <span className={styles.statCardTrend}>{activeSos.length > 0 ? '🚨' : '✓'}</span>
+            <span className={styles.statCardLabel}>Earned This Month</span>
+            <span className={styles.statCardTrend}>₹</span>
           </div>
-          <span className={styles.statCardValue}>{activeSos.length}</span>
+          <span className={styles.statCardValue}>{stats.earned || 0}</span>
         </div>
       </div>
-
-      {/* Emergency Zone */}
-      {activeSos.length > 0 && (
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-          <div className={styles.emergencySection}>
-            <h3 className={styles.sectionTitle}>
-              <Icon name="zap" /> Emergency
-            </h3>
-            <div className={styles.sosGrid}>
-              {activeSos.map((sos) => (
-                <div key={sos.uuid || sos.id} className={styles.sosCard}>
-                  <div className={styles.sosHeader}>
-                    <Badge variant="danger" size="sm">{sos.emergency_type || 'Emergency'}</Badge>
-                    <span className={styles.sosMeta}>{timeAgo(sos.created_at)}</span>
-                  </div>
-                  <div className={styles.sosBody}>
-                    {sos.pet?.name && <span className={styles.sosPet}>{sos.pet.name} ({sos.pet.species || 'Pet'})</span>}
-                    {sos.user?.name && <span className={styles.sosOwner}>{sos.user.name}</span>}
-                    {sos.description && <p className={styles.sosDesc}>{sos.description}</p>}
-                    {sos.address && (
-                      <span className={styles.sosLocation}>
-                        <Icon name="mapPin" size={14} /> {sos.address}
-                      </span>
-                    )}
-                  </div>
-                  <div className={styles.sosActions}>
-                    {sos.user?.phone && (
-                      <a href={`tel:${sos.user.phone}`} className={styles.sosPhoneBtn}>
-                        <Icon name="phone" size={14} /> Call
-                      </a>
-                    )}
-                    {(sos.status === 'pending' || sos.status === 'sos_pending') ? (
-                      <Button
-                        size="sm"
-                        variant="danger"
-                        disabled={actionsDisabled}
-                        loading={actionLoading === sos.uuid + '-sos'}
-                        onClick={() => handleSosRespond(sos.uuid)}
-                      >
-                        Accept &amp; Respond
-                      </Button>
-                    ) : (
-                      <Link to="/sos" className={styles.sosViewBtn}>
-                        <Badge variant={SOS_STATUS[sos.status]?.variant || 'warning'} size="sm">
-                          {SOS_STATUS[sos.status]?.label || sos.status}
-                        </Badge>
-                      </Link>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </motion.div>
-      )}
-
-      {activeSos.length === 0 && (
-        <div className={styles.noEmergency}>
-          <Icon name="check" /> No active emergencies
-        </div>
-      )}
 
       {/* Today's Schedule */}
       <div className={styles.scheduleSection}>

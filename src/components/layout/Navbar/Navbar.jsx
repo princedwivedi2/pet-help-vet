@@ -9,7 +9,6 @@ const PAGE_META = {
   '/dashboard': { group: null, title: 'Today' },
   '/appointments': { group: 'Patients', title: 'Appointments' },
   '/visit-records': { group: 'Patients', title: 'Visit Records' },
-  '/sos': { group: 'Patients', title: 'SOS Requests' },
   '/earnings': { group: 'Practice', title: 'Earnings' },
   '/reviews': { group: 'Practice', title: 'Reviews' },
   '/profile': { group: 'Profile', title: 'My Profile' },

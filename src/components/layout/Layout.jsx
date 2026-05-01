@@ -3,7 +3,6 @@ import { useState, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import Sidebar from './Sidebar/Sidebar';
 import Navbar from './Navbar/Navbar';
-import SOSBanner from './SOSBanner/SOSBanner';
 import PageTransition from '../common/PageTransition';
 import styles from './Layout.module.css';
 
@@ -20,7 +19,6 @@ export default function Layout() {
       {sidebarOpen && <div className={styles.overlay} onClick={closeSidebar} />}
       <div className={styles.main}>
         <Navbar onToggleSidebar={toggleSidebar} />
-        <SOSBanner />
         <div className={styles.content}>
           <AnimatePresence mode="wait">
             <PageTransition key={location.pathname}>

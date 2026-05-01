@@ -20,9 +20,6 @@ const visitRecordService = {
   getForAppointment(appointmentUuid) {
     return api.get(`/visit-records/appointment/${appointmentUuid}`);
   },
-  getForSos(sosUuid) {
-    return api.get(`/visit-records/sos/${sosUuid}`);
-  },
 };
 
 export default visitRecordService;

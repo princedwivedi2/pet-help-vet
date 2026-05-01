@@ -5,6 +5,7 @@ import FormInput from '../../components/common/FormInput/FormInput';
 import Badge from '../../components/common/Badge/Badge';
 import Loader from '../../components/common/Loader/Loader';
 import Tabs from '../../components/common/Tabs/Tabs';
+import LocationPicker from '../../components/common/LocationPicker/LocationPicker';
 import { useAuth } from '../../hooks/useAuth';
 import authService from '../../services/authService';
 import vetProfileService from '../../services/vetProfileService';
@@ -202,6 +203,31 @@ export default function Profile() {
     setVetForm((prev) => ({ ...prev, [name]: value }));
     setError('');
     setSuccess('');
+  };
+
+  const handleLocationChange = (lat, lng) => {
+    setVetForm((prev) => ({ ...prev, latitude: lat, longitude: lng }));
+    setError('');
+    setSuccess('');
+  };
+
+  const handleAddressFound = ({ address, city, state, postal_code }) => {
+    setVetForm((prev) => ({
+      ...prev,
+      address: address || prev.address,
+      city: city || prev.city,
+      state: state || prev.state,
+      postal_code: postal_code || prev.postal_code,
+    }));
+  };
+
+  const toggleConsultationType = (value) => {
+    setVetForm((prev) => ({
+      ...prev,
+      consultation_types: prev.consultation_types.includes(value)
+        ? prev.consultation_types.filter((v) => v !== value)
+        : [...prev.consultation_types, value],
+    }));
   };
 
   const mapAvailabilitiesToWorkingHours = (slots) =>
@@ -579,182 +605,215 @@ export default function Profile() {
                 </select>
               </div>
 
-              <FormInput
-                label="Vet Name"
-                name="vet_name"
-                value={vetForm.vet_name}
-                onChange={handleVetFormChange}
-              />
-              <FormInput
-                label="Phone"
-                name="phone"
-                value={vetForm.phone}
-                onChange={handleVetFormChange}
-              />
-              <FormInput
-                label="Clinic Name"
-                name="clinic_name"
-                value={vetForm.clinic_name}
-                onChange={handleVetFormChange}
-              />
-              <FormInput
-                label="Address"
-                name="address"
-                value={vetForm.address}
-                onChange={handleVetFormChange}
-              />
-              <FormInput
-                label="Profile Photo URL"
-                name="profile_photo"
-                value={vetForm.profile_photo}
-                onChange={handleVetFormChange}
-                placeholder=""
-              />
-              <FormInput
-                label="Consultation Fee (₹)"
-                name="consultation_fee"
-                type="number"
-                value={vetForm.consultation_fee}
-                onChange={handleVetFormChange}
-              />
-              <FormInput
-                label="Home Visit Fee (₹)"
-                name="home_visit_fee"
-                type="number"
-                value={vetForm.home_visit_fee}
-                onChange={handleVetFormChange}
-              />
-              <FormInput
-                label="Online Consultation Fee (₹)"
-                name="online_fee"
-                type="number"
-                value={vetForm.online_fee}
-                onChange={handleVetFormChange}
-              />
-              <FormInput
-                label="Max Home Visit Distance (km)"
-                name="max_home_visit_km"
-                type="number"
-                value={vetForm.max_home_visit_km}
-                onChange={handleVetFormChange}
-                placeholder="e.g. 15"
-              />
-              <div style={{ marginBottom: 14 }}>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 8, color: '#374151' }}>
-                  Consultation Types
-                </label>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  {[
-                    { value: 'clinic_visit', label: 'Clinic Visit' },
-                    { value: 'home_visit', label: 'Home Visit' },
-                    { value: 'phone_consultation', label: 'Phone Consultation' },
-                    { value: 'video_call', label: 'Video Call' },
-                  ].map((opt) => {
-                    const checked = vetForm.consultation_types.includes(opt.value);
-                    return (
-                      <label
-                        key={opt.value}
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: 6,
-                          padding: '6px 12px', borderRadius: 20, cursor: 'pointer', fontSize: 13,
-                          border: `1.5px solid ${checked ? 'var(--color-primary, #f97316)' : '#d1d5db'}`,
-                          background: checked ? 'var(--color-primary-light, #fff7ed)' : '#fff',
-                          color: checked ? 'var(--color-primary, #f97316)' : '#374151',
-                          fontWeight: checked ? 600 : 400,
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          style={{ display: 'none' }}
-                          onChange={() => {
-                            setVetForm((f) => ({
-                              ...f,
-                              consultation_types: checked
-                                ? f.consultation_types.filter((v) => v !== opt.value)
-                                : [...f.consultation_types, opt.value],
-                            }));
-                          }}
-                        />
-                        {opt.label}
-                      </label>
-                    );
-                  })}
+              {/* ── Identity & Contact ── */}
+              <div className={styles.section}>
+                <div className={styles.sectionHeader}>
+                  <h3 className={styles.sectionTitle}>Identity & Clinic</h3>
+                  <span className={styles.sectionHint}>How pet owners will see and reach you</span>
+                </div>
+                <div className={styles.grid2}>
+                  <FormInput
+                    label="Vet Name"
+                    name="vet_name"
+                    value={vetForm.vet_name}
+                    onChange={handleVetFormChange}
+                  />
+                  <FormInput
+                    label="Clinic Name"
+                    name="clinic_name"
+                    value={vetForm.clinic_name}
+                    onChange={handleVetFormChange}
+                  />
+                </div>
+                <div className={styles.grid2}>
+                  <FormInput
+                    label="Phone"
+                    name="phone"
+                    value={vetForm.phone}
+                    onChange={handleVetFormChange}
+                  />
+                  <FormInput
+                    label="Profile Photo URL"
+                    name="profile_photo"
+                    value={vetForm.profile_photo}
+                    onChange={handleVetFormChange}
+                    placeholder="https://..."
+                  />
                 </div>
               </div>
-              <FormInput
-                label="City"
-                name="city"
-                value={vetForm.city}
-                onChange={handleVetFormChange}
-              />
-              <FormInput
-                label="State"
-                name="state"
-                value={vetForm.state}
-                onChange={handleVetFormChange}
-              />
-              <FormInput
-                label="Postal Code"
-                name="postal_code"
-                value={vetForm.postal_code}
-                onChange={handleVetFormChange}
-              />
-              <div className={styles.grid2}>
+
+              {/* ── Credentials ── */}
+              <div className={styles.section}>
+                <div className={styles.sectionHeader}>
+                  <h3 className={styles.sectionTitle}>Credentials</h3>
+                  <span className={styles.sectionHint}>Your licence and qualifications</span>
+                </div>
+                <div className={styles.grid2}>
+                  <FormInput
+                    label="License Number"
+                    name="license_number"
+                    value={vetForm.license_number}
+                    onChange={handleVetFormChange}
+                  />
+                  <FormInput
+                    label="Qualification"
+                    name="qualifications"
+                    value={vetForm.qualifications}
+                    onChange={handleVetFormChange}
+                    placeholder="BVSc, MVSc"
+                  />
+                </div>
                 <FormInput
-                  label="Latitude"
-                  name="latitude"
-                  type="number"
-                  value={vetForm.latitude}
+                  label="Specialization"
+                  name="specialization"
+                  value={vetForm.specialization}
                   onChange={handleVetFormChange}
+                  placeholder="Small animals, surgery, dermatology..."
                 />
                 <FormInput
-                  label="Longitude"
-                  name="longitude"
-                  type="number"
-                  value={vetForm.longitude}
+                  label="Bio"
+                  name="bio"
+                  type="textarea"
+                  value={vetForm.bio}
                   onChange={handleVetFormChange}
+                  placeholder="Brief introduction shown on your public profile"
                 />
               </div>
-              <FormInput
-                label="Specialization / Qualifications"
-                name="qualifications"
-                value={vetForm.qualifications}
-                onChange={handleVetFormChange}
-              />
-              <FormInput
-                label="License Number"
-                name="license_number"
-                value={vetForm.license_number}
-                onChange={handleVetFormChange}
-              />
-              <FormInput
-                label="Specialization"
-                name="specialization"
-                value={vetForm.specialization}
-                onChange={handleVetFormChange}
-              />
-              <FormInput
-                label="Services (comma separated)"
-                name="services_text"
-                value={vetForm.services_text}
-                onChange={handleVetFormChange}
-                placeholder="general, emergency, surgery"
-              />
-              <FormInput
-                label="Accepted Species (comma separated)"
-                name="accepted_species_text"
-                value={vetForm.accepted_species_text}
-                onChange={handleVetFormChange}
-                placeholder="dog, cat, rabbit"
-              />
-              <FormInput
-                label="Bio"
-                name="bio"
-                as="textarea"
-                value={vetForm.bio}
-                onChange={handleVetFormChange}
-              />
+
+              {/* ── Services & Species ── */}
+              <div className={styles.section}>
+                <div className={styles.sectionHeader}>
+                  <h3 className={styles.sectionTitle}>Services & Species</h3>
+                  <span className={styles.sectionHint}>What you offer and which pets you treat</span>
+                </div>
+                <div className={styles.chipGroup}>
+                  <span className={styles.chipLabel}>Consultation Types</span>
+                  <div className={styles.chipRow}>
+                    {[
+                      { value: 'clinic_visit', label: 'Clinic Visit' },
+                      { value: 'home_visit', label: 'Home Visit' },
+                      { value: 'phone_consultation', label: 'Phone Consultation' },
+                      { value: 'video_call', label: 'Video Call' },
+                    ].map((opt) => {
+                      const checked = vetForm.consultation_types.includes(opt.value);
+                      return (
+                        <label
+                          key={opt.value}
+                          className={`${styles.chip} ${checked ? styles.chipActive : ''}`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleConsultationType(opt.value)}
+                          />
+                          {opt.label}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+                <FormInput
+                  label="Services (comma separated)"
+                  name="services_text"
+                  value={vetForm.services_text}
+                  onChange={handleVetFormChange}
+                  placeholder="general, emergency, surgery"
+                />
+                <FormInput
+                  label="Accepted Species (comma separated)"
+                  name="accepted_species_text"
+                  value={vetForm.accepted_species_text}
+                  onChange={handleVetFormChange}
+                  placeholder="dog, cat, rabbit"
+                />
+              </div>
+
+              {/* ── Pricing ── */}
+              <div className={styles.section}>
+                <div className={styles.sectionHeader}>
+                  <h3 className={styles.sectionTitle}>Pricing</h3>
+                  <span className={styles.sectionHint}>Set 0 for any service you don't offer</span>
+                </div>
+                <div className={styles.grid3}>
+                  <FormInput
+                    label="Clinic Visit Fee (₹)"
+                    name="consultation_fee"
+                    type="number"
+                    value={vetForm.consultation_fee}
+                    onChange={handleVetFormChange}
+                  />
+                  <FormInput
+                    label="Home Visit Fee (₹)"
+                    name="home_visit_fee"
+                    type="number"
+                    value={vetForm.home_visit_fee}
+                    onChange={handleVetFormChange}
+                  />
+                  <FormInput
+                    label="Online Fee (₹)"
+                    name="online_fee"
+                    type="number"
+                    value={vetForm.online_fee}
+                    onChange={handleVetFormChange}
+                  />
+                </div>
+                <FormInput
+                  label="Max Home Visit Distance (km)"
+                  name="max_home_visit_km"
+                  type="number"
+                  value={vetForm.max_home_visit_km}
+                  onChange={handleVetFormChange}
+                  placeholder="e.g. 15"
+                />
+              </div>
+
+              {/* ── Clinic Location ── */}
+              <div className={styles.section} id="field-address">
+                <div className={styles.sectionHeader}>
+                  <h3 className={styles.sectionTitle}>Clinic Location</h3>
+                  <span className={styles.sectionHint}>
+                    Search, click the map, or detect your location. The pin sets your exact spot —
+                    address fields below auto-fill.
+                  </span>
+                </div>
+
+                <LocationPicker
+                  latitude={vetForm.latitude}
+                  longitude={vetForm.longitude}
+                  onLocationChange={handleLocationChange}
+                  onAddressFound={handleAddressFound}
+                />
+
+                <FormInput
+                  label="Street Address"
+                  name="address"
+                  value={vetForm.address}
+                  onChange={handleVetFormChange}
+                  placeholder="Will auto-fill from map"
+                />
+                <div className={styles.grid3}>
+                  <FormInput
+                    label="City"
+                    name="city"
+                    value={vetForm.city}
+                    onChange={handleVetFormChange}
+                  />
+                  <FormInput
+                    label="State"
+                    name="state"
+                    value={vetForm.state}
+                    onChange={handleVetFormChange}
+                  />
+                  <FormInput
+                    label="Postal Code"
+                    name="postal_code"
+                    value={vetForm.postal_code}
+                    onChange={handleVetFormChange}
+                  />
+                </div>
+                <input type="hidden" id="field-latitude" value={vetForm.latitude} readOnly />
+                <input type="hidden" id="field-longitude" value={vetForm.longitude} readOnly />
+              </div>
 
               <div className={styles.docSection}>
                 <p className={styles.docTitle}>Required Verification Documents</p>

@@ -5,7 +5,6 @@ import Loader from './components/common/Loader/Loader';
 import Dashboard from './pages/Dashboard/Dashboard';
 import Appointments from './pages/Appointments/Appointments';
 import VisitRecords from './pages/VisitRecords/VisitRecords';
-import SosRequests from './pages/SOS/SosRequests';
 import Wallet from './pages/Wallet/Wallet';
 import Reviews from './pages/Reviews/Reviews';
 import Profile from './pages/Profile/Profile';
@@ -35,7 +34,6 @@ export default function App() {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="appointments" element={<Appointments />} />
         <Route path="visit-records" element={<VisitRecords />} />
-        <Route path="sos" element={<SosRequests />} />
         <Route path="earnings" element={<Wallet />} />
         <Route path="wallet" element={<Navigate to="/earnings" replace />} />
         <Route path="reviews" element={<Reviews />} />
